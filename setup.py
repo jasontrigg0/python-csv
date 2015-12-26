@@ -22,7 +22,8 @@ setup(
     install_requires=[
         "numpy",
         "pandas",
-        "matplotlib"
+        "matplotlib",
+        "xlrd"
     ],
     keywords = [],
     classifiers = [],
