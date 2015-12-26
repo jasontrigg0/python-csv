@@ -1,18 +1,22 @@
 #!/usr/bin/env python
 from matplotlib import pyplot as plt
-import optparse
+import argparse
 import sys
 import utils
 import csv
 
 def readCL():
-    parser = optparse.OptionParser()
-    parser.add_option("-f","--infile",default="/dev/stdin")
-    parser.add_option("-n","--no_header",action="store_true")
-    parser.add_option("-b","--do_bin_plot",action="store_true")
-    parser.add_option("-o","--outfile")
-    options, args = parser.parse_args()
-    return options.infile, options.no_header, options.do_bin_plot, options.outfile
+    desc_string = """Quick graphing utility for csvs of one or two columns.
+One column csvs are graphed as histograms, two column csvs are plotted as scatterplots (<= 1000 points) or binned scatterplots (>1000 points).
+A binned scatterplot divides the points into 10 bins by x-value and plots the average (x,y) for each bin.
+"""
+    parser = argparse.ArgumentParser(description=desc_string, formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument("-f","--infile",default="/dev/stdin")
+    parser.add_argument("-n","--no_header",action="store_true")
+    parser.add_argument("-b","--do_bin_plot",action="store_true")
+    parser.add_argument("-o","--outfile")
+    args = parser.parse_args()
+    return args.infile, args.no_header, args.do_bin_plot, args.outfile
 
 
 #also can try context="fivethirtyeight"
