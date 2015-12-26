@@ -18,6 +18,7 @@ def readCL():
     parser.add_argument("-c","--cache_freq",default="100")
     parser.add_argument("-t","--trim_wide_fields",action="store_true")
     parser.add_argument("-d","--delimiter", default=",")
+    parser.add_argument("-s","--max_field_size",help="maximum field size (truncated + ellipses added)", type=int)
     args = parser.parse_args()
 
     if args.infile == sys.stdin:
@@ -25,10 +26,10 @@ def readCL():
     else:
         f_in = open(args.infile)
 
-    return f_in, args.cache_freq, args.trim_wide_fields, args.no_header, args.delimiter
+    return f_in, args.cache_freq, args.trim_wide_fields, args.no_header, args.delimiter, args.max_field_size
     
 
-def width(string):
+def width(string, max_field_size):
     """
     compute the length of the string as printed by less
     which can be complicated for unicode characters
@@ -40,7 +41,7 @@ def width(string):
     #ie they take up *four characters*
     #replace them with four spaces to calculate width correctly
     codecs.register_error('four_space',lambda x: (u"    ",x.start+1)) 
-    string = preprocess_field(string)
+    string = preprocess_field(string, max_field_size)
     string = string.decode("utf8", "four_space")
 
 
@@ -65,9 +66,6 @@ def width(string):
     import unicodedata
     return sum(1 + (unicodedata.east_asian_width(c) in "WF") for c in string)
 
-def max_width(vec):
-    return max(width(str(s)) for s in vec)
-
 def spacing_line(widths):
     """
     special string printed three times:
@@ -75,22 +73,24 @@ def spacing_line(widths):
     """
     return '|-' + '+'.join(['-'*(w+2) for w in widths]) + '-|' + "\n"
 
-def preprocess_field(field):
+def preprocess_field(field, max_field_size):
     field = field.replace("\t"," "*4)
     field = field.replace("\n","")
     field = field.replace("\r","")
+    if max_field_size and len(field) > max_field_size:
+        field = field[:(max_field_size - 3)] + "..."
     return field
 
-def pretty_print_field(full_width, field):
+def pretty_print_field(full_width, field, max_field_size):
     """
     pad the field string to have len full_width
     "fieldvalue" --> " fieldvalue     "
     """
-    field = preprocess_field(field)
-    extra_spaces = full_width - width(field)
+    field = preprocess_field(field, max_field_size)
+    extra_spaces = full_width - width(field, max_field_size)
     return " " + field + " "*extra_spaces + " "
     
-def pretty_print_row(col_full_widths, row):
+def pretty_print_row(col_full_widths, row, max_field_size):
     """
     pretty print a row such that each column is padded to have the widths in the col_full_widths vector
     """
@@ -99,17 +99,17 @@ def pretty_print_row(col_full_widths, row):
         end = " |"
     else:
         end = "|"
-    return start + "|".join(pretty_print_field(full_width, field) for full_width, field in zip(col_full_widths, row)) + end + "\n"
+    return start + "|".join(pretty_print_field(full_width, field, max_field_size) for full_width, field in zip(col_full_widths, row)) + end + "\n"
 
     
-def compute_full_widths(hdr, cached_lines):
+def compute_full_widths(hdr, cached_lines, max_field_size):
     """
     input a hdr and a list of rows and compute the maximum printed width of each column
     """
     full_widths = []
     for l in (cached_lines + [hdr]):
         if not l: continue #skip hdr if empty
-        l_widths = [width(f) for f in l]
+        l_widths = [width(f, max_field_size) for f in l]
         if not full_widths:
             full_widths = l_widths
         else:
@@ -117,29 +117,29 @@ def compute_full_widths(hdr, cached_lines):
     return full_widths
 
 
-def update_full_widths(full_widths, r):
+def update_full_widths(full_widths, r, max_field_size):
     """
     input a list of maximum column widths and update that list given a new row
     """
-    l_widths = [width(f) for f in r]
+    l_widths = [width(f, max_field_size) for f in r]
     full_widths_new = [max(x1,x2) for x1,x2 in itertools.izip_longest(full_widths, l_widths)]
     return full_widths_new
     
 
-def print_cache(full_widths, hdr, cached_lines):
+def print_cache(full_widths, hdr, cached_lines, max_field_size):
     if hdr:
         yield spacing_line(full_widths)
-        yield pretty_print_row(full_widths, hdr)
+        yield pretty_print_row(full_widths, hdr, max_field_size)
     yield spacing_line(full_widths)
     for r in cached_lines:
-        yield pretty_print_row(full_widths, r)
+        yield pretty_print_row(full_widths, r, max_field_size)
 
 def pretty_print_csv(s):
     f_in = StringIO.StringIO(s)
     return "".join(get_all_lines(f_in, 100, False, False, ","))
 
 
-def get_all_lines(f_in, cache_freq, trim_wide_fields, no_header, delimiter):
+def get_all_lines(f_in, cache_freq, trim_wide_fields, no_header, delimiter, max_field_size):
     cache_freq = int(cache_freq)
     hdr = None
     cached_lines = []
@@ -157,34 +157,34 @@ def get_all_lines(f_in, cache_freq, trim_wide_fields, no_header, delimiter):
         else:
             #print cached lines all at once
             if not full_widths:
-                full_widths = compute_full_widths(hdr, cached_lines)
+                full_widths = compute_full_widths(hdr, cached_lines, max_field_size)
                 full_widths_new = full_widths
-                for l in print_cache(full_widths, hdr, cached_lines):
+                for l in print_cache(full_widths, hdr, cached_lines, max_field_size):
                     yield l
             #continue updating full_widths with each row
             full_widths_new = update_full_widths(full_widths_new, r)
             if i % cache_freq == 0:
                 full_widths = full_widths_new
             #print current row
-            yield (pretty_print_row(full_widths,r))
+            yield (pretty_print_row(full_widths,r,max_field_size))
 
         
     #if we never printed the cache above
     if not full_widths:
-        full_widths = compute_full_widths(hdr, cached_lines)
+        full_widths = compute_full_widths(hdr, cached_lines, max_field_size)
         full_widths_new = full_widths
-        for l in print_cache(full_widths, hdr, cached_lines):
+        for l in print_cache(full_widths, hdr, cached_lines, max_field_size):
             yield l
     yield spacing_line(full_widths_new)
 
 
 
 if __name__ == "__main__":
-    f_in, cache_freq, trim_wide_fields, no_header, delimiter  = readCL()
+    f_in, cache_freq, trim_wide_fields, no_header, delimiter, max_field_size  = readCL()
 
     lesspager = utils.LessPager()
 
     
-    for l in get_all_lines(f_in, cache_freq, trim_wide_fields, no_header, delimiter):
+    for l in get_all_lines(f_in, cache_freq, trim_wide_fields, no_header, delimiter, max_field_size):
         lesspager.write(l)
     
