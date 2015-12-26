@@ -41,7 +41,7 @@ def graph(pts, context="ggplot", title=None, line=False, outfile=None):
     if title:
         plt.suptitle(title)
     if outfile:
-        plt.savefig(filename)
+        plt.savefig(outfile)
     plt.show()
 
 
@@ -174,8 +174,6 @@ def mle_fit_pareto_curve(pts):
     print res
     return res
     
-
-
 
 def plot_hist(pts,cnt=25,context="ggplot",outfile=None):
     pts = [x[0] for x in pts]
