@@ -4,7 +4,7 @@ import optparse
 import csv
 import re
 from python_csv.utils import readcsv, is_int, str_is_float, str_is_int, md5hash
-from python_csv.pyindent import pyindent
+from python_csv.pindent import pindent
 
 def readCL():
     usagestr = "%prog"
@@ -272,11 +272,11 @@ if __name__ == "__main__":
     signal(SIGPIPE,SIG_DFL)
 
     if begin_code:
-        begin_code = pyindent(begin_code)
+        begin_code = pindent(begin_code)
     if grep_code:
-        grep_code = pyindent(grep_code)
+        grep_code = pindent(grep_code)
     if process_code:
-        process_code = pyindent(process_code)
+        process_code = pindent(process_code)
     #preprocess /.*/ syntax
     grep_code = gen_grep_code(grep_code)
 

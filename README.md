@@ -1,6 +1,6 @@
 **python-csv**
 
-Python tools for manipulating csv files. Some parts (eg pclook.py) inspired by the excellent csvkit (https://github.com/onyxfish/csvkit)
+Python tools for manipulating csv files. Some parts (eg plook) inspired by the excellent csvkit (https://github.com/onyxfish/csvkit)
     
     
     
@@ -29,11 +29,12 @@ plook: pretty print csv in less
 
 pgraph: quick plotting of one and two dimensional numeric datasets in csv
 
-ptable: 
+ptable: show the frequencies of different values in a one-column csv
 
-pset: quick 
+pset: union, and difference of two one-column csvs
 
 pdiff: view differences between two csv files
+
 
 
 

@@ -17,6 +17,7 @@ setup(
         "python_csv/psort",
         "python_csv/pset",
         "python_csv/ptable",
+        "python_csv/pindent",
         "python_csv/to_csv"
     ],
     install_requires=[
