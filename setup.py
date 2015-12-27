@@ -9,15 +9,15 @@ setup(
     url = "https://github.com/jasontrigg0/python-csv",
     download_url = 'https://github.com/jasontrigg0/python-csv/tarball/0.0.1',
     scripts=[
-        "python-csv/pcsv.py",
-        "python-csv/pcagg.py",
-        "python-csv/pcgraph.py",
-        "python-csv/pcjoin.py",
-        "python-csv/pclook.py",
-        "python-csv/pcsort.sh",
-        "python-csv/pcset.py",
-        "python-csv/pctable.py",
-        "python-csv/to_csv.py"
+        "python-csv/pcsv",
+        "python-csv/pagg",
+        "python-csv/pgraph",
+        "python-csv/pjoin",
+        "python-csv/plook",
+        "python-csv/psort",
+        "python-csv/pset",
+        "python-csv/ptable",
+        "python-csv/to_csv"
     ],
     install_requires=[
         "numpy",
