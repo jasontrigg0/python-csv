@@ -21,8 +21,8 @@ def readCL():
 def _groupby(l,n):
     return itertools.izip_longest(* ( (iter(l),) * n) )
 
-def pyindent(string):
-    return '\n'.join(_pyindent_iter(string.split('\n')))
+def pindent(string):
+    return '\n'.join(_pindent_iter(string.split('\n')))
 
 def _threewise(iterable):
     """s -> (None, s0, s1), (s0, s1, s2), ... (sn-1, sn, None)
@@ -84,7 +84,7 @@ def _split(s):
     return out_list
                     
 
-def _pyindent_iter(line_iter):
+def _pindent_iter(line_iter):
     indent_level = 0
     for l in (line_iter):
         # print l
@@ -126,7 +126,7 @@ if __name__ == "__main__":
         code_string = f_in.read()
 
     if print_formatted:
-        sys.stdout.write(pyindent(code_string) + "\n")
+        sys.stdout.write(pindent(code_string) + "\n")
     else:
-        exec(pyindent(code_string))
+        exec(pindent(code_string))
     

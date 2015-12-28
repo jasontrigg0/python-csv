@@ -28,7 +28,7 @@ if __name__ == "__main__":
         code_string = f_in.read()
 
     if print_formatted:
-        sys.stdout.write(pyindent(code_string) + "\n")
+        sys.stdout.write(pindent(code_string) + "\n")
     else:
-        exec(pyindent(code_string))
+        exec(pindent(code_string))
     
