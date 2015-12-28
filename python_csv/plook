@@ -162,7 +162,7 @@ def get_all_lines(f_in, cache_freq, trim_wide_fields, no_header, delimiter, max_
                 for l in print_cache(full_widths, hdr, cached_lines, max_field_size):
                     yield l
             #continue updating full_widths with each row
-            full_widths_new = update_full_widths(full_widths_new, r)
+            full_widths_new = update_full_widths(full_widths_new, r, max_field_size)
             if i % cache_freq == 0:
                 full_widths = full_widths_new
             #print current row
