@@ -14,37 +14,117 @@ A binned scatterplot divides the points into 10 bins by x-value and plots the av
     parser.add_argument("-f","--infile",default="/dev/stdin")
     parser.add_argument("-n","--no_header",action="store_true")
     parser.add_argument("-b","--do_bin_plot",action="store_true")
+    parser.add_argument("-s","--do_scatter_plot",action="store_true")
     parser.add_argument("-o","--outfile")
     args = parser.parse_args()
-    return args.infile, args.no_header, args.do_bin_plot, args.outfile
+    return args.infile, args.no_header, args.do_bin_plot, args.do_scatter_plot, args.outfile
 
 
+def center_plot(pts, plt):
+    xmin = min([p[0] for p in pts])
+    xmax = max([p[0] for p in pts])
+    ymin = min([p[1] for p in pts])
+    ymax = max([p[1] for p in pts])
+    x_range = xmax - xmin; y_range = ymax - ymin
+    eps = 0.05
+    #don't reset if the ranges are empty, which happens
+    #when plotting one point
+    if x_range != 0 and y_range != 0:
+        plt.xlim(xmin - eps * x_range, xmax + eps * x_range)
+        plt.ylim(ymin - eps * y_range, ymax + eps * y_range)
+
+def counter(l):
+    cnt_dict = {}
+    for i in l:
+        cnt_dict[tuple(i)] = cnt_dict.get(tuple(i),0) + 1
+    return cnt_dict
+        
 #also can try context="fivethirtyeight"
-def graph(pts, context="ggplot", title=None, line=False, outfile=None):
+def scatter(pts, context="ggplot", title=None, line=False, outfile=None, freq_sizes=False):
     with plt.style.context(context):
         x,y = zip(*pts)
         if line:
             plt.plot(x, y)
+            center_plot(pts, plt)
         else:
-            plt.plot(x, y, '.')
-        xmin = min([p[0] for p in pts])
-        xmax = max([p[0] for p in pts])
-        ymin = min([p[1] for p in pts])
-        ymax = max([p[1] for p in pts])
-        x_range = xmax - xmin; y_range = ymax - ymin
-        eps = 0.05
-        #don't reset if the ranges are empty, which happens
-        #when plotting one point
-        if x_range != 0 and y_range != 0:
-            plt.xlim(xmin - eps * x_range, xmax + eps * x_range)
-            plt.ylim(ymin - eps * y_range, ymax + eps * y_range)
+            if freq_sizes:
+                cnt_dict = counter(pts)
+                size = [cnt_dict[tuple(p)] + 15 for p in pts] #make minimum size 16 because 1 is too small to see
+                plt.scatter(x, y, s=size)
+            else:
+                plt.scatter(x, y)
     if title:
         plt.suptitle(title)
     if outfile:
         plt.savefig(outfile)
-    plt.show()
+    else:
+        plt.show()
+
+        
+
+def discrete_cmap(N, base_cmap=None):
+    """copied from https://gist.github.com/jakevdp/91077b0cae40f8f8244a
+    Create an N-bin discrete colormap from the specified input map"""
+
+    # Note that if base_cmap is a string or None, you can simply do
+    #    return plt.cm.get_cmap(base_cmap, N)
+    # The following works for string, None, or a colormap instance:
+    import numpy as np
+    base = plt.cm.get_cmap(base_cmap)
+    color_list = base(np.linspace(0, 1, N))
+    cmap_name = base.name + str(N)
+    return base.from_list(cmap_name, color_list, N)
 
 
+
+def scatter_3d(pts, context="ggplot", title=None, outfile=None):
+    with plt.style.context(context):
+        x,y,z = zip(*pts)
+        z = process_color_col(z)
+        if len(set(z)) <= 5:
+            N = len(set(z))
+            plt.scatter(x, y, c=z, cmap=discrete_cmap(N, 'brg')) #http://matplotlib.org/examples/color/colormaps_reference.html
+        else:
+            plt.scatter(x, y, c=z, cmap='jet')
+            
+        
+        # xmin = min([p[0] for p in pts])
+        # xmax = max([p[0] for p in pts])
+        # ymin = min([p[1] for p in pts])
+        # ymax = max([p[1] for p in pts])
+        # x_range = xmax - xmin; y_range = ymax - ymin
+        # eps = 0.05
+        #don't reset if the ranges are empty, which happens
+        #when plotting one point
+        # if x_range != 0 and y_range != 0:
+        #     plt.xlim(xmin - eps * x_range, xmax + eps * x_range)
+        #     plt.ylim(ymin - eps * y_range, ymax + eps * y_range)
+    if title:
+        plt.suptitle(title)
+    if outfile:
+        plt.savefig(outfile)
+    else:
+        plt.show()
+
+        
+def process_color_col(vals):
+    all_float = all(python_csv.utils.str_is_float(v) for v in vals)
+    distinct = set(vals)
+    if not all_float and len(distinct) <= 5:
+        val_to_id = dict((v,i) for i,v in enumerate(distinct))
+        return [val_to_id[v] for v in vals]
+    elif not all_float:
+        raise Exception("ERROR: color (third) column must either be all floats or have <= 5 distinct values")
+    else:
+        #normalize to 0-1
+        vals = [float(v) for v in vals]
+        minval = min(vals)
+        vals = [v - minval for v in vals]
+        maxval = max(vals)
+        vals = [v / maxval for v in vals]
+        return vals
+
+        
 def bin_plot(pts, num_bins = 10, outfile=None):
     #sort pts by x value:
     pts.sort(key = lambda x: x[0])
@@ -58,7 +138,7 @@ def bin_plot(pts, num_bins = 10, outfile=None):
         y_val = sum(y_vals) / float(len(y_vals))
         outpts.append((x_val,y_val))
     # print outpts
-    graph(outpts, title="Bin plot", outfile=outfile)
+    scatter(outpts, title="Bin plot", outfile=outfile)
 
 def curve_fit(xy_pts, fn, plot_points=True):
     #xy_pts = [(x,y)]
@@ -229,7 +309,7 @@ def _readcsv(f_in):
             yield OrderedDict(zip(header,line))
         
 if __name__ == "__main__":
-    infile, no_header, do_bin_plot, outfile = readCL()
+    infile, no_header, do_bin_plot, do_scatter_plot, outfile = readCL()
 
     #jtrigg avoid pandas for quicker loadtimes
     # import pandas as pd
@@ -246,14 +326,14 @@ if __name__ == "__main__":
         if not no_header:
             hdr = f_in.next().strip()
             sys.stdout.write("WARNING: using first line of input, \"{hdr}\", as header. If file doesn't have a header use -n option.".format(**vars()) + '\n')
-        df = [l.split(',') for l in f_in]
+        df = [l.strip().split(',') for l in f_in]
         l1 = len(df)
-        #drop rows with non-floats
-        df = [r for r in df if all(python_csv.utils.str_is_float(x) for x in r)]
+        #drop rows with non-floats in first two columns (third column used for coloring)
+        df = [r for r in df if all(python_csv.utils.str_is_float(x) for x in r[:2])]
         l2 = len(df)
         dropped = l1 - l2
-        #convert fields to float
-        df = [[float(x) for x in r] for r in df]
+        #convert first two columns to float
+        df = [[float(x) for x in r[:2]] + r[2:] for r in df]
 
     # print "loaded"
 
@@ -263,9 +343,16 @@ if __name__ == "__main__":
     if len(df[0]) == 1:
         plot_hist(df, outfile=outfile)
     elif len(df[0]) == 2:
-        if len(df) > 1000 or do_bin_plot:
+        if do_bin_plot:
+            bin_plot(df, outfile=outfile)
+        elif do_scatter_plot:
+            scatter(df, outfile=outfile, freq_sizes=True)
+        elif len(df) > 1000:
             bin_plot(df, outfile=outfile)
         else:
-            graph(df, outfile=outfile)
+            scatter(df, outfile=outfile, freq_sizes=True)
+    elif len(df[0]) == 3:
+        #indicate third dimension by color
+        scatter_3d(df, outfile=outfile)
     else:
         raise Exception("ERROR: >2 columns")
