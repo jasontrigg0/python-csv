@@ -149,15 +149,17 @@ def gen_grep_code(grep_code):
             grep_code = 're.findall("{grep_string}",",".join(l))'.format(**vars())
     return grep_code
 
+
 def gen_outhdr(hdr, add_list, keep_list, drop_list):
     outhdr = hdr[:]
     if keep_list:
         if not add_list:
             add_list = [x for x in keep_list if x not in hdr and not is_int(x)]
-        tmp_dict = dict(list(enumerate(outhdr)) + zip(outhdr,outhdr))
-        outhdr = [tmp_dict[x] for x in keep_list if x not in add_list]
+        #example tmp_dict = {0:"col1",1:"col2",2:"col3","col1":"col1","col2":"col2","col3":"col3"}
+        tmp_dict = dict(list(enumerate(outhdr)) + zip(outhdr,outhdr) + zip(add_list, add_list)) 
+        outhdr = [tmp_dict[x] for x in keep_list] #first include already existing columns from -c argument
     if add_list:
-        outhdr += [x for x in add_list if x not in outhdr]
+        outhdr += [x for x in add_list  if x not in outhdr]
     if drop_list:
         outhdr = [x for ix,x in enumerate(outhdr) if (ix not in drop_list and x not in drop_list)]
     return outhdr
@@ -248,13 +250,15 @@ def process(f_in, keep_list, drop_list, begin_code, grep_code, process_code, end
         #     rout = [str(r.get(h,"")) for h in outhdr]
         #     write_line(rout)
 
-        if (fix and i>0):
-            pass
-        elif not out_hdr:
-            #set and print header
+        if not out_hdr:
             add_list = [k for k in r.keys() if k not in in_hdr] #add any keys from r that aren't in the in_hdr
             out_hdr = gen_outhdr(in_hdr, add_list, keep_list, drop_list)
+            #set and print header
             csv.writer(sys.stdout, lineterminator= '\n').writerows([out_hdr])
+            
+
+        if fix:
+            pass
         else:
             #print regular line
             # rout = [str(r.get(h,"")) for h in outhdr]
