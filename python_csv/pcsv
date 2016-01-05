@@ -23,6 +23,9 @@ def readCL():
     parser.add_option("--autofix",action="store_true")
     parser.add_option("--set", help="load a file with no header, storing each line as an element of a set")
 
+    if sys.stdin.isatty() and not options.infile:
+        sys.stderr.write("WARNING: pcsv using /dev/stdin as default input file (-f) but nothing seems to be piped in..." + "\n")
+
     options, args = parser.parse_args()
     if not options.infile:
         f_in = sys.stdin
