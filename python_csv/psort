@@ -1,82 +1,92 @@
-#!/bin/bash
+#!/usr/bin/env python
+import argparse
+import pandas as pd
+import sys
+import utils
 
-COLUMN=0
-REVERSE=1
-FLOAT=1
-NO_HEADER=0
-usage()
-{
-cat <<EOF
- EOF
-usage: $0 options
+def readCL():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f","--infile",type=argparse.FileType("r"),default=sys.stdin)
+    parser.add_argument("-c","--sort_list",help="csv of column names or indices. Can include currently non-existent columns")
+    parser.add_argument("-r","--reverse",action="store_true",help="sort ascending (default descending)")
+    parser.add_argument("-s","--string",action="store_true",help="sort as string (default is float)")
+    parser.add_argument("-d","--delimiter", default=",")
+    parser.add_argument("-n","--no_header",action="store_true")
+    args = parser.parse_args()
+    args.sort_list = args.sort_list.split(",")
+    return args.infile, args.sort_list, args.reverse, args.string, args.delimiter, args.no_header
 
-This script run the test1 or test2 over a machine.
 
-OPTIONS:
-   -h      Show this message
-   -g      sort as string (default is float)
-   -r      sort ascending (default descending)
-EOF
-}
+if __name__ == "__main__":
+    infile, sort_list, reverse, string, delimiter, no_header = readCL()
+    def proc_sort_list(sort_list, df):
+        for index in sort_list:
+            if index in df.columns:
+                yield index
+            elif utils.str_is_int(index):
+                yield df.columns[int(index)]
+            else:
+                raise Exception("ERROR: invalid sort_list element {index}".format(**vars()))
+    args = {}
+    if no_header:
+        args["header"]=None
+    df = pd.read_csv(infile, delimiter=delimiter, encoding="utf-8", dtype="object", **args)
+    sort_list = list(proc_sort_list(sort_list, df))
+    if not string:
+        for s in sort_list:
+            df[s] = df[s].apply(lambda x: float(x))
+    df = df.sort_values(by=sort_list, ascending=(reverse))
+    df.to_csv(sys.stdout,index=False,encoding="utf-8")
 
-while getopts “ht:c:gnr” OPTION
-do
-     case $OPTION in
-         h)
-             usage
-             exit 1
-             ;;
-	 c)
-	     COLUMN=$OPTARG
-	     ;;
-	 g)
-	     FLOAT=0
-	     ;;
-	 r)
-	     REVERSE=0
-	     ;;
-	 n)
-	     NO_HEADER=1
-	     ;;
-	 a)
-	     ADD_COLS=$OPTARG
-	     ;;
-	 # c)
-	 #     CUT_COLS=$OPTARG
-	 #     ;;
-         ?)
-             usage
-             exit
-             ;;
-     esac
-done
+# 	     ;;
+# 	 g)
+# 	     FLOAT=0
+# 	     ;;
+# 	 r)
+# 	     REVERSE=0
+# 	     ;;
+# 	 n)
+# 	     NO_HEADER=1
+# 	     ;;
+# 	 a)
+# 	     ADD_COLS=$OPTARG
+# 	     ;;
+# 	 # c)
+# 	 #     CUT_COLS=$OPTARG
+# 	 #     ;;
+#          ?)
+#              usage
+#              exit
+#              ;;
+#      esac
+# done
 
-if [[ $NO_HEADER -ne 0 ]]
-then
-    hdr=""
-else
-    read -r hdr;
-fi
+# if [[ $NO_HEADER -ne 0 ]]
+# then
+#     hdr=""
+# else
+#     read -r hdr;
+# fi
     
-if [[ "$COLUMN" =~ ^-?[0-9]+$ ]]
-then
-    COLUMN=$(($COLUMN+1))
-else
-    COLUMN=$(python -c "print \"$hdr\".split(',').index(\"$COLUMN\") + 1")
-fi
+# if [[ "$COLUMN" =~ ^-?[0-9]+$ ]]
+# then
+#     COLUMN=$(($COLUMN+1))
+# else
+#     COLUMN=$(python -c "print \"$hdr\".split(',').index(\"$COLUMN\") + 1")
+# fi
 
-CMD="echo $hdr; sort -t, -k$COLUMN,$COLUMN"
+# CMD="echo $hdr; sort --field-separator=',' -k$COLUMN,$COLUMN"
 
-if [[ $FLOAT -ne 0 ]]
-then
-    CMD=$CMD" -g"
-fi
+# if [[ $FLOAT -ne 0 ]]
+# then
+#     CMD=$CMD" -g"
+# fi
 
-if [[ $REVERSE -ne 0 ]]
-then
-    CMD=$CMD" -r"
-fi
+# if [[ $REVERSE -ne 0 ]]
+# then
+#     CMD=$CMD" -r"
+# fi
 
-CMD=$CMD" /dev/stdin"
+# CMD=$CMD" /dev/stdin"
 
-eval $CMD
+# eval $CMD
