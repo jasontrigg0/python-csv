@@ -7,7 +7,7 @@ def readCL():
     usagestr = "%prog"
     parser = argparse.ArgumentParser()
     parser.add_argument("-f","--infile",default=sys.stdin)
-    parser.add_argument("-g","--group_by",help="csv list of columns to aggregate by", nargs="*")
+    parser.add_argument("-g","--group_by",help="csv list of columns to aggregate by", nargs="*", default=[])
     parser.add_argument("-a","--agg_fns",help="function to aggregate by. Options: 'sum','mean','max','strmax','min','strmin','std','cnt','pctile_73','val0','val1'", nargs="*", default=[])
     parser.add_argument("-c","--agg_cols",help="columns to aggregate", nargs="*")
     parser.add_argument("-d","--delimiter",default=",")
