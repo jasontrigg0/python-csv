@@ -18,16 +18,20 @@ def readCL():
     parser.add_argument("-c","--cache_freq",default="100")
     parser.add_argument("-t","--trim_wide_fields",action="store_true")
     parser.add_argument("-d","--delimiter", default=",")
-    parser.add_argument("-s","--max_field_size",help="maximum field size (truncated + ellipses added)", type=int)
+    parser.add_argument("-s","--max_field_size",help="maximum field size (truncated + ellipses added)", type=int, default=50)
+    parser.add_argument("-a","--full_fields",action="store_true",help="don't truncate fields")
     args = parser.parse_args()
-
     if args.infile == sys.stdin:
         f_in = sys.stdin
     else:
         f_in = open(args.infile)
-
+    if args.full_fields:
+        args.max_field_size = None
     return f_in, args.cache_freq, args.trim_wide_fields, args.no_header, args.delimiter, args.max_field_size
-    
+
+def _csv2pretty(s):
+    f_in = StringIO.StringIO(s)
+    return "".join(get_all_lines(f_in, 100, False, False, ","))
 
 def width(string, max_field_size):
     """
@@ -134,10 +138,7 @@ def print_cache(full_widths, hdr, cached_lines, max_field_size):
     for r in cached_lines:
         yield pretty_print_row(full_widths, r, max_field_size)
 
-def pretty_print_csv(s):
-    f_in = StringIO.StringIO(s)
-    return "".join(get_all_lines(f_in, 100, False, False, ","))
-
+        
 
 def get_all_lines(f_in, cache_freq, trim_wide_fields, no_header, delimiter, max_field_size):
     cache_freq = int(cache_freq)
