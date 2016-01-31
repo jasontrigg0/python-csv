@@ -19,6 +19,7 @@ def readCL():
 
 if __name__ == "__main__":
     infile, sort_list, reverse, string, delimiter, no_header = readCL()
+    utils.fix_broken_pipe()
     def proc_sort_list(sort_list, df):
         for index in sort_list:
             if index in df.columns:
@@ -33,60 +34,11 @@ if __name__ == "__main__":
     df = pd.read_csv(infile, delimiter=delimiter, encoding="utf-8", dtype="object", **args)
     sort_list = list(proc_sort_list(sort_list, df))
     if not string:
+        tmp_df = pd.DataFrame()
         for s in sort_list:
-            df[s] = df[s].apply(lambda x: float(x))
-    df = df.sort_values(by=sort_list, ascending=(reverse))
+            tmp_df[s] = df[s].apply(lambda x: float(x))
+        tmp_df = tmp_df.sort_values(by=sort_list, ascending=(reverse))
+        df = df.reindex(tmp_df.index)
+    else:
+        df = df.sort_values(by=sort_list, ascending=(reverse))
     df.to_csv(sys.stdout,index=False,encoding="utf-8")
-
-# 	     ;;
-# 	 g)
-# 	     FLOAT=0
-# 	     ;;
-# 	 r)
-# 	     REVERSE=0
-# 	     ;;
-# 	 n)
-# 	     NO_HEADER=1
-# 	     ;;
-# 	 a)
-# 	     ADD_COLS=$OPTARG
-# 	     ;;
-# 	 # c)
-# 	 #     CUT_COLS=$OPTARG
-# 	 #     ;;
-#          ?)
-#              usage
-#              exit
-#              ;;
-#      esac
-# done
-
-# if [[ $NO_HEADER -ne 0 ]]
-# then
-#     hdr=""
-# else
-#     read -r hdr;
-# fi
-    
-# if [[ "$COLUMN" =~ ^-?[0-9]+$ ]]
-# then
-#     COLUMN=$(($COLUMN+1))
-# else
-#     COLUMN=$(python -c "print \"$hdr\".split(',').index(\"$COLUMN\") + 1")
-# fi
-
-# CMD="echo $hdr; sort --field-separator=',' -k$COLUMN,$COLUMN"
-
-# if [[ $FLOAT -ne 0 ]]
-# then
-#     CMD=$CMD" -g"
-# fi
-
-# if [[ $REVERSE -ne 0 ]]
-# then
-#     CMD=$CMD" -r"
-# fi
-
-# CMD=$CMD" /dev/stdin"
-
-# eval $CMD
