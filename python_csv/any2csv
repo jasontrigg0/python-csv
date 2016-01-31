@@ -20,38 +20,7 @@ def readCL():
         args.path = args.path.split(",")
     return args.infile, args.xls_sheet, args.xls_sheet_names, args.path
 
-    
-def write_csv(rows):
-    wr = csv.writer(sys.stdout, lineterminator="\n")
-    for r in rows:
-        wr.writerow([s.encode("utf-8") for s in r if s])
-
-
 if __name__ == "__main__":
     infile, xls_sheet, xls_sheet_names, path = readCL()
-
     txt = infile.read()
-    
-    try:
-        rows = python_csv.to_csv.read_xls(txt)
-        write_csv(rows)
-        sys.exit()
-    except xlrd.biffh.XLRDError:
-        pass
-
-    try:
-        rows = python_csv.to_csv.read_json(txt, path)
-        write_csv(rows)
-        sys.exit()
-    except ValueError:
-        pass
-
-    try:
-        rows = python_csv.to_csv.read_xml(txt, path)
-        write_csv(rows)
-        sys.exit()
-    except xml.parsers.expat.ExpatError:
-        pass
-
-    
-    raise Exception("ERROR: File doesn't match xls, json or xml format!" + "\n")
+    python_csv.to_csv.any2csv(txt, xls_sheet=xls_sheet, xls_sheet_names=xls_sheet_names, path=path, to_stdout=True)

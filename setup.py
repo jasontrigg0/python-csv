@@ -18,7 +18,7 @@ setup(
         "python_csv/pset",
         "python_csv/ptable",
         "python_csv/pindent",
-        "python_csv/to_csv"
+        "python_csv/any2csv"
     ],
     install_requires=[
         "numpy",

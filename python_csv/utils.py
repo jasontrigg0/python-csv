@@ -19,6 +19,7 @@ def readcsv(f):
     else:
         raise
 
+    
 def _readcsv(f_in):
     header = None
     for line in csv.reader(f_in):
@@ -27,6 +28,18 @@ def _readcsv(f_in):
         else:
             yield OrderedDict(zip(header,line))
 
+            
+def csv_string(rows):
+    """http://stackoverflow.com/a/9157370"""
+    import io
+    import csv
+    output = io.BytesIO()
+    writer = csv.writer(output)
+    for r in rows:
+        writer.writerow(r)
+    return output.getvalue()
+    
+            
             
 def df_to_csv_string(df):
     return df.to_csv(None,index=False)
