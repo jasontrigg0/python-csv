@@ -5,7 +5,7 @@ import argparse
 import sys
 import xml
 import python_csv.utils
-import python_csv.to_csv
+import python_csv.any2csv
 
 def readCL():
     parser = argparse.ArgumentParser()
@@ -23,4 +23,4 @@ def readCL():
 if __name__ == "__main__":
     infile, xls_sheet, xls_sheet_names, path = readCL()
     txt = infile.read()
-    python_csv.to_csv.any2csv(txt, xls_sheet=xls_sheet, xls_sheet_names=xls_sheet_names, path=path, to_stdout=True)
+    python_csv.any2csv.any2csv(txt, xls_sheet=xls_sheet, xls_sheet_names=xls_sheet_names, path=path, to_stdout=True)

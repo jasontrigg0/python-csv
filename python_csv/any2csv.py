@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import python_csv.utils
 import xlrd
+import csv
+import sys
 
 ###
 def any2csv(txt, xls_sheet=None, xls_sheet_names=None, path=[], to_stdout=False):
@@ -63,6 +65,7 @@ def csv2pretty(txt):
 
 def print_csv(rows):
     wr = csv.writer(sys.stdout, lineterminator="\n")
+    if not rows: return
     for r in rows:
         wr.writerow([s.encode("utf-8") for s in r if s])
 
@@ -81,6 +84,8 @@ def parse_cell(cell, datemode):
         return dt.strftime("%Y-%m-%d")
     elif cell.ctype == xlrd.XL_CELL_NUMBER and int(cell.ctype) == cell.ctype:
         return int(cell.value)
+    elif cell.ctype == xlrd.XL_CELL_ERROR:
+        return "--PARSING-ERROR--"
     else:
         return cell.value.encode("utf-8")
 
