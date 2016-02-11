@@ -13,6 +13,7 @@ def readCL():
     parser.add_argument("-d","--delimiter",default=",")
     parser.add_argument("--lam", nargs="*", default=[], help="function takes a dataframe and returns a value to add a new column or returns a subset of dataframe rows filter to keep only those rows. Example 'lambda x: x.iloc[0,:]'")
     parser.add_argument("--append",help="append computed columns to existing file", action="store_true")
+    parser.add_argument("--filter",help="filter rows to include only those containing the computed columns. eg find the row with the max age instead of just returning the max age",action="store_true")
     args = parser.parse_args()
 
     #the duplicate pivot uses two primitive functions, val0 and val1
@@ -28,7 +29,7 @@ def readCL():
             return s
     args.lam = [eval(parse_lam(i)) for i in args.lam]
     
-    return args.infile, args.group_by, args.agg_fns, args.agg_cols, args.lam, args.append, args.delimiter
+    return args.infile, args.group_by, args.agg_fns, args.agg_cols, args.lam, args.append, args.filter, args.delimiter
 
 def sum_fn(array):
     return sum([float(x) for x in array])
@@ -144,7 +145,7 @@ def groupby_apply_lambda(df_groups, lambda_list):
 #     return df_out
 
 if __name__ == "__main__":
-    infile, group_by_cols, agg_str_list, agg_cols, lambda_fn_list, append, delimiter = readCL()
+    infile, group_by_cols, agg_str_list, agg_cols, lambda_fn_list, append, do_filter, delimiter = readCL()
     df = pd.read_csv(infile, delimiter=delimiter)
 
     #special treatment for cnt
@@ -173,8 +174,13 @@ if __name__ == "__main__":
         else:
             df_out = pd.DataFrame(df_agg(df, agg_cols, agg_fn_list))
 
-    if append:
+    if append or do_filter:
         # if agg_str_list:
+        output_cols = df_out.columns
         df_out = df.merge(df_out, on=group_by_cols, how='left') #, suffixes = ('', '_' + agg_str_list[0]))
+        if do_filter:
+            def filter_fn(r):
+                return [r[c] for c in group_by_cols + agg_cols] == [r[c] for c in output_cols]
+            df_out = df_out[df_out.apply(filter_fn,axis=1)]
 
     df_out.to_csv(sys.stdout, index=False)
