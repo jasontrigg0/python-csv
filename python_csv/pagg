@@ -177,7 +177,13 @@ if __name__ == "__main__":
     if append or do_filter:
         # if agg_str_list:
         output_cols = df_out.columns
-        df_out = df.merge(df_out, on=group_by_cols, how='left') #, suffixes = ('', '_' + agg_str_list[0]))
+        if not group_by_cols:
+            for i,c in enumerate(output_cols):
+                df[c] = df_out.iloc[0,i]
+            df_out = df
+        else:
+            df_out = df.merge(df_out, on=group_by_cols, how='left') #, suffixes = ('', '_' + agg_str_list[0]))
+            
         if do_filter:
             def filter_fn(r):
                 return [r[c] for c in group_by_cols + agg_cols] == [r[c] for c in output_cols]
