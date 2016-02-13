@@ -2,6 +2,7 @@
 import argparse
 import pandas as pd
 import sys
+import python_csv.pindent
 
 def readCL():
     usagestr = "%prog"
@@ -11,7 +12,7 @@ def readCL():
     parser.add_argument("-a","--agg_fns",help="function to aggregate by. Options: 'sum','mean','max','strmax','min','strmin','std','cnt','pctile_73','val0','val1'", nargs="*", default=[])
     parser.add_argument("-c","--agg_cols",help="columns to aggregate", nargs="*")
     parser.add_argument("-d","--delimiter",default=",")
-    parser.add_argument("--lam", nargs="*", default=[], help="function takes a dataframe and returns a value to add a new column or returns a subset of dataframe rows filter to keep only those rows. Example 'lambda x: x.iloc[0,:]'")
+    parser.add_argument("--lam", nargs="*", default=[], help="function takes a dataframe and returns a value to add a new column or returns a subset of dataframe rows to keep only those rows. lam argument is a function body for a function that takes a dataframe variable x and returns a dataframe. For example: 'return x.iloc[0,:]' or 'return x[x[\"Age\"] == 22]' or 'x = x[x[\"Age\"] == x[\"Age\"].min()]; if len(x) == 1: return x; else: return x[x[\"Tm\"] == \"TOT\"]'")
     parser.add_argument("--append",help="append computed columns to existing file", action="store_true")
     parser.add_argument("--filter",help="filter rows to include only those containing the computed columns. eg find the row with the max age instead of just returning the max age",action="store_true")
     args = parser.parse_args()
@@ -22,12 +23,18 @@ def readCL():
         args.agg_fns.append("val0")
         args.agg_fns.append("val1")
 
-    def parse_lam(s):
-        if not s.strip().startswith("lambda"):
-            return "lambda x:" + s
-        else:
-            return s
-    args.lam = [eval(parse_lam(i)) for i in args.lam]
+    # def parse_lam(s):
+    #     if not s.strip().startswith("lambda"):
+    #         return pindent.pindent("lambda x:" + s)
+    #     else:
+    #         return s
+    # args.lam = [eval(parse_lam(i)) for i in args.lam]
+
+    for i,fn_string in enumerate(args.lam):
+        fn_string = "def lam{i}(x): {fn_string}".format(**vars())
+        exec(python_csv.pindent.pindent(fn_string))
+
+    args.lam = [vars()["lam"+str(i)] for i,_ in enumerate(args.lam)] #[lam0, lam1, lam2,...]
     
     return args.infile, args.group_by, args.agg_fns, args.agg_cols, args.lam, args.append, args.filter, args.delimiter
 
@@ -133,9 +140,8 @@ def groupby_apply_lambda(df_groups, lambda_list):
     df_out = pd.concat(df_list,axis=1)
     if df_out.index.name in df_out.columns:
         df_out = df_out.reset_index(drop=True)
-    else:
+    elif df_out.index.name:
         df_out = df_out.reset_index()
-    # print df_out
     return df_out
     
     
