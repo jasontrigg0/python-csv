@@ -1,7 +1,7 @@
 from distutils.core import setup
 setup(
     name = 'python-csv',
-    packages = ['python_csv'],
+    packages = ['pcsv'],
     version = "0.0.7",
     description = 'Python tools for manipulating csv files',
     author = "Jason Trigg",
@@ -9,16 +9,16 @@ setup(
     url = "https://github.com/jasontrigg0/python-csv",
     download_url = 'https://github.com/jasontrigg0/python-csv/tarball/0.0.7',
     scripts=[
-        "python_csv/pcsv",
-        "python_csv/pagg",
-        "python_csv/pgraph",
-        "python_csv/pjoin",
-        "python_csv/plook",
-        "python_csv/psort",
-        "python_csv/pset",
-        "python_csv/ptable",
-        "python_csv/pindent",
-        "python_csv/any2csv"
+        "pcsv/pcsv",
+        "pcsv/pagg",
+        "pcsv/pgraph",
+        "pcsv/pjoin",
+        "pcsv/plook",
+        "pcsv/psort",
+        "pcsv/pset",
+        "pcsv/ptable",
+        "pcsv/pindent",
+        "pcsv/any2csv"
     ],
     install_requires=[
         "numpy",
