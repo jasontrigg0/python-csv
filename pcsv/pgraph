@@ -83,7 +83,7 @@ def scatter_3d(pts, context="ggplot", title=None, outfile=None):
         z = process_color_col(z)
         if len(set(z)) <= 5:
             N = len(set(z))
-            plt.scatter(x, y, c=z, cmap=discrete_cmap(N, 'brg')) #http://matplotlib.org/examples/color/colormaps_reference.html
+            plt.scatter(x, y, c=z, cmap=discrete_cmap(N, 'rainbow')) #http://matplotlib.org/examples/color/colormaps_reference.html
         else:
             plt.scatter(x, y, c=z, cmap='jet')
             
