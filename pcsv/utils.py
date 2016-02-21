@@ -28,11 +28,11 @@ def _readcsv(f_in):
         else:
             yield OrderedDict(zip(header,line))
 
-def get_first(l):
+def get_first(l, default=None):
     if l:
         return l[0]
     else:
-        return None
+        return default
             
 def csv_string(rows):
     """http://stackoverflow.com/a/9157370"""
