@@ -3,7 +3,7 @@ import sys
 import argparse
 import csv
 import re
-from pcsv.utils import readcsv, is_int, str_is_float, str_is_int, md5hash
+from pcsv.utils import readcsv, is_int, str_is_float, str_is_int, md5hash, get_first
 from pcsv.pindent import pindent
 
 def readCL():
