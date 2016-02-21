@@ -2,7 +2,7 @@
 from matplotlib import pyplot as plt
 import argparse
 import sys
-import python_csv.utils
+import pcsv.utils
 import csv
 
 def readCL():
@@ -89,8 +89,7 @@ def scatter_3d(pts, context="ggplot", title=None, outfile=None):
                 color_bin = z_val_bins[i]
                 x_subset, y_subset = zip(*[(x,y) for x,y,z in pts if z == val])
                 plt.scatter(x_subset, y_subset, label=val, color=discrete_cmap(N, 'rainbow')(color_bin)) #http://matplotlib.org/examples/color/colormaps_reference.html
-
-            #set legend
+            #set legend (and move it outside the plot box)
             ax = plt.subplot(111)
             box = ax.get_position()
             ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
@@ -123,7 +122,7 @@ def process_color_col(vals):
     """Convert a list of values eg ["black", "white", "white", "black"]
     to a list of floats [0,1,1,0] for use in matplotlib colormaps
     """
-    all_float = all(python_csv.utils.str_is_float(v) for v in vals)
+    all_float = all(pcsv.utils.str_is_float(v) for v in vals)
     distinct = set(vals)
     if not all_float and len(distinct) <= 5:
         val_to_id = dict((v,i) for i,v in enumerate(distinct))
@@ -178,7 +177,7 @@ def curve_fit(xy_pts, fn, plot_points=True):
 def ls_dist_curve_fit(pts, fn, cnt=25):
     #least square curve fitting
     import matplotlib.pyplot as plt
-    from python_csv.utils import pairwise
+    from pcsv.utils import pairwise
     n, bins, patches = plt.hist(pts, cnt, normed=1, histtype='stepfilled', rwidth=0.8)
     bin_mids = [(b1 + b2) / 2.0 for b1,b2 in pairwise(bins) if b2]
     print len(bins)
@@ -344,7 +343,7 @@ if __name__ == "__main__":
         df = [l.strip().split(',') for l in f_in]
         l1 = len(df)
         #drop rows with non-floats in first two columns (third column used for coloring)
-        df = [r for r in df if all(python_csv.utils.str_is_float(x) for x in r[:2])]
+        df = [r for r in df if all(pcsv.utils.str_is_float(x) for x in r[:2])]
         l2 = len(df)
         dropped = l1 - l2
         #convert first two columns to float

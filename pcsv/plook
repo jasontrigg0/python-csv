@@ -5,7 +5,7 @@ import csv
 import sys
 import itertools
 import os
-import python_csv.utils
+import pcsv.utils
 import StringIO
 
 # input: csv file
@@ -183,7 +183,7 @@ def get_all_lines(f_in, cache_freq, trim_wide_fields, no_header, delimiter, max_
 if __name__ == "__main__":
     f_in, cache_freq, trim_wide_fields, no_header, delimiter, max_field_size  = readCL()
 
-    lesspager = python_csv.utils.LessPager()
+    lesspager = pcsv.utils.LessPager()
 
     
     for l in get_all_lines(f_in, cache_freq, trim_wide_fields, no_header, delimiter, max_field_size):

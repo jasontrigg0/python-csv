@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import python_csv.utils
+import pcsv.utils
 import xlrd
 import csv
 import sys
@@ -56,7 +56,7 @@ def df2csv(df):
 #     pass
 
 def csv2pretty(txt):
-    from python_csv.plook import _csv2pretty
+    from pcsv.plook import _csv2pretty
     return _csv2pretty(txt)
 
 
@@ -102,7 +102,7 @@ def read_xls(txt, sheet, print_sheet_names):
 
     if sheet in sheet_names:
         sh = wb.sheet_by_name(sheet)
-    elif python_csv.utils.str_is_int(sheet) and int(sheet) < len(sheet_names):
+    elif pcsv.utils.str_is_int(sheet) and int(sheet) < len(sheet_names):
         sh = wb.sheet_by_index(int(sheet))
     else:
         raise Exception("-s argument not in xls list of sheets ({})".format(str(sheet_names)))
@@ -159,7 +159,7 @@ def follow_path(dict_list_obj, path):
         return dict_list_obj
 
     if isinstance(dict_list_obj, list):
-        if python_csv.utils.str_is_int(path[0]):
+        if pcsv.utils.str_is_int(path[0]):
             index = int(path[0])
             return follow_path(dict_list_obj[index],path[1:])
         else:
@@ -168,7 +168,7 @@ def follow_path(dict_list_obj, path):
         if path[0] in dict_list_obj:
             key = path[0]
             return follow_path(dict_list_obj[key],path[1:])
-        elif python_csv.utils.str_is_int(path[0]):
+        elif pcsv.utils.str_is_int(path[0]):
             index = int(path[0])
             return follow_path(dict_list_obj.values()[index],path[1:])
         else:

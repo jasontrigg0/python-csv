@@ -18,6 +18,7 @@ setup(
         "pcsv/pset",
         "pcsv/ptable",
         "pcsv/pindent",
+        "pcsv/ptr",
         "pcsv/any2csv"
     ],
     install_requires=[

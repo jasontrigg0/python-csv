@@ -2,7 +2,7 @@
 import argparse
 import pandas as pd
 import sys
-import python_csv.pindent
+import pcsv.pindent
 
 def readCL():
     usagestr = "%prog"
@@ -32,7 +32,7 @@ def readCL():
 
     for i,fn_string in enumerate(args.lam):
         fn_string = "def lam{i}(x): {fn_string}".format(**vars())
-        exec(python_csv.pindent.pindent(fn_string))
+        exec(pcsv.pindent.pindent(fn_string))
 
     args.lam = [vars()["lam"+str(i)] for i,_ in enumerate(args.lam)] #[lam0, lam1, lam2,...]
     

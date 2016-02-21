@@ -3,8 +3,8 @@ import sys
 import argparse
 import csv
 import re
-from python_csv.utils import readcsv, is_int, str_is_float, str_is_int, md5hash
-from python_csv.pindent import pindent
+from pcsv.utils import readcsv, is_int, str_is_float, str_is_int, md5hash
+from pcsv.pindent import pindent
 
 def readCL():
     parser = argparse.ArgumentParser()

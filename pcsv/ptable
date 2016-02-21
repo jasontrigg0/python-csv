@@ -2,7 +2,7 @@
 import optparse
 import pandas as pd
 import sys
-import python_csv.utils
+import pcsv.utils
 
 def readCL():
     usagestr = "%prog -f infile col1 [col2]"
@@ -78,7 +78,7 @@ def two_col(col1,col2):
     
 if __name__ == "__main__":
     f_in, col1, col2, no_header, delimiter = readCL()
-    python_csv.utils.fix_broken_pipe()
+    pcsv.utils.fix_broken_pipe()
     if not no_header:
         dat = pd.read_csv(f_in, dtype="object", delimiter=delimiter)
         hdr = ",".join(dat.columns)
