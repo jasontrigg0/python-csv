@@ -179,13 +179,31 @@ def get_all_lines(f_in, cache_freq, trim_wide_fields, no_header, delimiter, max_
     yield spacing_line(full_widths_new)
 
 
-
+def do_write(l, lesspager, use_less):
+    if use_less:
+        lesspager.write(l)
+    else:
+        sys.stdout.write(l)
+        
 if __name__ == "__main__":
     f_in, cache_freq, trim_wide_fields, no_header, delimiter, max_field_size  = readCL()
 
-    lesspager = pcsv.utils.LessPager()
+    output = get_all_lines(f_in, cache_freq, trim_wide_fields, no_header, delimiter, max_field_size)
 
+    #print output to stdout if small, otherwise to less
+    terminal_cols = pcsv.utils.terminal_size()
     
-    for l in get_all_lines(f_in, cache_freq, trim_wide_fields, no_header, delimiter, max_field_size):
-        lesspager.write(l)
+    first_rows = list(itertools.islice(output,0,20))
+    wide = any(len(l) > terminal_cols for l in first_rows)
     
+    lesspager = None
+    use_less = False
+    if wide or len(first_rows) == 20:
+        use_less = True
+        lesspager = pcsv.utils.LessPager()
+        
+    for l in first_rows:
+        do_write(l, lesspager, use_less)
+    for l in output:
+        do_write(l, lesspager, use_less)
+        

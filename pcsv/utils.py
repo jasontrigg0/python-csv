@@ -28,6 +28,30 @@ def _readcsv(f_in):
         else:
             yield OrderedDict(zip(header,line))
 
+
+def terminal_size():
+    columns = os.popen('tput cols').read().split()[0]
+    return int(columns)
+
+
+def regex(regex, string):
+    """Takes one or a list of regex-es,
+    looks for them in one or a list of strings s
+    and returns the first match or else empty string
+    """
+    if isinstance(regex,str):
+        regex_list = [regex]
+    else:
+        regex_list = regex
+
+    if isinstance(string,str):
+        string_list = [string]
+    else:
+        string_list = string
+        
+    all_matches = [i for s in string_list for regex in regex_list for i in re.findall(regex,s)]
+    return get_first(all_matches,"")
+            
 def get_first(l, default=None):
     if l:
         return l[0]
