@@ -2,7 +2,7 @@
 import argparse
 import pandas as pd
 import sys
-import utils
+import pcsv.utils
 
 def readCL():
     parser = argparse.ArgumentParser()
@@ -43,12 +43,12 @@ def sort_df(df, sort_list, string, reverse, sort_by_row):
 
 if __name__ == "__main__":
     infile, sort_list, reverse, string, delimiter, no_header, sort_by_row = readCL()
-    utils.fix_broken_pipe()
+    pcsv.utils.fix_broken_pipe()
     def proc_sort_list(sort_list, df):
         for index in sort_list:
             if index in df.columns:
                 yield index
-            elif utils.str_is_int(index):
+            elif pcsv.utils.str_is_int(index):
                 yield df.columns[int(index)]
             else:
                 raise Exception("ERROR: invalid sort_list element {index}".format(**vars()))
