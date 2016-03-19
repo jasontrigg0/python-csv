@@ -3,21 +3,22 @@ import pcsv.utils
 import xlrd
 import csv
 import sys
+import xml
 
 ###
-def any2csv(txt, xls_sheet=None, xls_sheet_names=None, path=[], to_stdout=False):
+def any2csv(txt, xls_sheet=None, xls_sheet_names=None, path=[], summary=False, to_stdout=False):
     try:
         xls2csv(txt, xls_sheet, xls_sheet_names, to_stdout)
     except xlrd.biffh.XLRDError:
         pass
 
     try:
-        json2csv(txt, path, to_stdout)
+        json2csv(txt, path, summary, to_stdout)
     except ValueError:
         pass
 
     try:
-        xml2csv(txt, path, to_stdout)
+        xml2csv(txt, path, summary, to_stdout)
     except xml.parsers.expat.ExpatError:
         pass
     
@@ -28,12 +29,20 @@ def xls2csv(txt, xls_sheet, xls_sheet_names, to_stdout=False):
     rows = read_xls(txt, xls_sheet, xls_sheet_names)
     return process_rows(rows, to_stdout)
 
-def json2csv(txt, path, to_stdout=False):
-    rows = read_json(txt, path)
+def json2csv(txt, path, summary=False, to_stdout=False):
+    dict_list_obj = parse_json(txt)
+    if summary:
+        field_summary(dict_list_obj)
+        sys.exit()
+    rows = [r for r in process_dict_list_obj(dict_list_obj, path)]
     return process_rows(rows, to_stdout)
 
-def xml2csv(txt, path, to_stdout=False):
-    rows = read_xml(txt, path)
+def xml2csv(txt, path, summary=False, to_stdout=False):
+    dict_list_obj = parse_xml(txt)
+    if summary:
+        field_summary(dict_list_obj)
+        sys.exit()
+    rows = [r for r in process_dict_list_obj(dict_list_obj, path)]
     return process_rows(rows, to_stdout)
 
 def rows2csv(rows):
@@ -43,21 +52,28 @@ def rows2csv(rows):
     output = io.BytesIO()
     wr = csv.writer(output)
     for r in rows:
-        wr.writerow([s.encode("utf-8") for s in r if s])
+        wr.writerow([s.encode("utf-8") for s in r])
     return output.getvalue().strip()
 
-def csv2df(txt):
-    pass
+def row2csv(row):
+    return rows2csv([row])
+
+def csv2df(csv_string):
+    """http://stackoverflow.com/a/22605281"""
+    import sys
+    if sys.version_info[0] < 3:
+        from StringIO import StringIO
+    else:
+        from io import StringIO
+    import pandas as pd
+    return pd.DataFrame.from_csv(StringIO(csv_string),index_col=False)
 
 def df2csv(df):
-    pass
-
-# def csv2dict(txt):
-#     pass
+    return df.to_csv(None,index=False)
 
 def csv2pretty(txt):
-    from pcsv.plook import _csv2pretty
-    return _csv2pretty(txt)
+    from pcsv.plook import csv2pretty
+    return csv2pretty(txt)
 
 
 
@@ -112,46 +128,55 @@ def read_xls(txt, sheet, print_sheet_names):
         r = [parse_cell(sh.cell(i,j), wb.datemode) for j in xrange(sh.ncols)]
         wr.writerow(r)
 
-def read_json(txt, json_path):
-    if not isinstance(json_path, list):
-        t = json_path
-        raise Exception("read_json function argument json_path requires a list, received '{json_path}', type {t}".format(**vars()))
+
+def parse_json(txt):
     import json
     dict_list_obj = json.loads(txt)
-    for r in process_dict_list_obj(dict_list_obj, json_path):
-        yield r
+    return dict_list_obj
 
-
-def read_xml(txt, xml_path):
-    if not isinstance(xml_path, list):
-        t = type(xml_path)
-        raise Exception("read_xml function argument xml_path requires a list, received '{xml_path}', type: {t}".format(**vars()))
+def parse_xml(txt):
     import xmltodict
     dict_list_obj = xmltodict.parse(txt)
-    for r in process_dict_list_obj(dict_list_obj, xml_path):
-        yield r
+    return dict_list_obj
 
-
+def field_summary(dict_list_obj):
+    from collections import deque
+    stack = deque([(None,dict_list_obj,-1)])
+    while stack:
+        key, val, depth = stack.pop()
+        if key: print "--"*depth + str(key)
+        if isinstance(val, list) and len(val) > 0:
+            stack.append(("["+str(len(val))+"]",val[0],depth+1))
+        elif isinstance(val, dict):
+            for a,b in val.items()[::-1]:
+                stack.append((a,b,depth+1))
+            
+        
 def process_dict_list_obj(dict_list_obj, path):
     """json-style nested objects consisting of 
     a (dictionary OR list) of (dictionary OR list) of (dictionary OR list) etc
     """
-    dict_list_obj = follow_path(dict_list_obj, path)
-    if isinstance(dict_list_obj, list):
+    if not isinstance(path, list):
+        t = type(path)
+        raise Exception("process_dict_list_obj function argument path requires a list, received '{path}', type {t}".format(**vars()))
+    end_node = follow_path(dict_list_obj, path)
+    if isinstance(end_node, list):
         cols = set()
-        for i in dict_list_obj:
+        for i in end_node:
             cols = cols.union(i.viewkeys())
         cols = list(cols)
         # print "here: ", cols
         yield cols
-        for i in dict_list_obj:
+        for i in end_node:
             r = [unicode(i.get(c,"")) for c in cols]
             yield r
-    else:
-        cols = list(dict_list_obj.viewkeys())
+    elif isinstance(end_node, dict):
+        cols = list(end_node.viewkeys())
         yield cols
-        r = [unicode(dict_list_obj.get(c,"")) for c in cols]
+        r = [unicode(end_node.get(c,"")) for c in cols]
         yield r
+    else:
+        raise Exception("ERROR: invalid path ({path}). Path doesn't end in a dictionary or list.")
 
 
 def follow_path(dict_list_obj, path):
