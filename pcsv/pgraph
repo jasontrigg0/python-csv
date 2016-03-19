@@ -71,7 +71,8 @@ def discrete_cmap(N, base_cmap=None):
     # The following works for string, None, or a colormap instance:
     import numpy as np
     base = plt.cm.get_cmap(base_cmap)
-    color_list = base(np.linspace(0, 1, N))
+    #jtrigg@20160319 bugfix: below line fails when N=1 so try max(N,2)
+    color_list = base(np.linspace(0, 1, max(N,2)))
     cmap_name = base.name + str(N)
     return base.from_list(cmap_name, color_list, N)
 
@@ -135,7 +136,9 @@ def process_color_col(vals):
         minval = min(vals)
         vals = [v - minval for v in vals]
         maxval = max(vals)
-        vals = [v / maxval for v in vals]
+        #jtrigg20160319 bugfix: if all values are the same don't try to normalize
+        if maxval > 0:
+            vals = [v / maxval for v in vals]
         return vals
 
         
