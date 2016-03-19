@@ -349,8 +349,10 @@ if __name__ == "__main__":
         #convert first two columns to float
         df = [[float(x) for x in r[:2]] + r[2:] for r in df]
 
-    # print "loaded"
-
+    if len(df) == 0:
+        sys.stderr.write("ERROR: input has no rows. Exiting..." + "\n")
+        sys.exit(-1)
+    
     if dropped != 0:
         sys.stderr.write("WARNING: dropped {} non float values".format(l1-l2) + '\n')
 
