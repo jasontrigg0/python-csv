@@ -144,7 +144,7 @@ def field_summary(dict_list_obj):
     stack = deque([(None,dict_list_obj,-1)])
     while stack:
         key, val, depth = stack.pop()
-        if key: print "--"*depth + str(key)
+        if key: print "|   "*depth + str(key)
         if isinstance(val, list) and len(val) > 0:
             stack.append(("["+str(len(val))+"]",val[0],depth+1))
         elif isinstance(val, dict):
