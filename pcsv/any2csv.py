@@ -8,7 +8,7 @@ import xml
 ###
 def any2csv(txt, xls_sheet=None, xls_sheet_names=None, path=[], summary=False, to_stdout=False):
     try:
-        xls2csv(txt, xls_sheet, xls_sheet_names, to_stdout)
+        xls2csv(txt, xls_sheet, summary, to_stdout)
     except xlrd.biffh.XLRDError:
         pass
 
@@ -25,8 +25,8 @@ def any2csv(txt, xls_sheet=None, xls_sheet_names=None, path=[], summary=False, t
     raise Exception("ERROR: File doesn't match xls, json or xml format!" + "\n")
 
 
-def xls2csv(txt, xls_sheet, xls_sheet_names, to_stdout=False):
-    rows = read_xls(txt, xls_sheet, xls_sheet_names)
+def xls2csv(txt, xls_sheet, summary, to_stdout=False):
+    rows = read_xls(txt, xls_sheet, summary)
     return process_rows(rows, to_stdout)
 
 def json2csv(txt, path, summary=False, to_stdout=False):
@@ -113,6 +113,7 @@ def read_xls(txt, sheet, print_sheet_names):
 
     sheet_names = wb.sheet_names()
     if print_sheet_names:
+        sys.stdout.write("List of xls sheets: " + "\n")
         sys.stdout.write(str(sheet_names) + "\n")
         sys.exit()
 
