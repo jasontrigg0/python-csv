@@ -70,14 +70,14 @@ def csv_string(rows):
     
             
             
-def df_to_csv_string(df):
+def df2csv(df):
     return df.to_csv(None,index=False)
 
 
-def pretty_print_df(df):
-    from l import pretty_print_csv
-    s = df_to_csv_string(df)
-    return pretty_print_csv(s)
+def df2pretty(df):
+    from pcsv.plook import csv2pretty
+    s = df2csv(df)
+    return csv2pretty(s)
 
     
 def basic_logger(name, stream=sys.stderr):
@@ -441,6 +441,13 @@ class IndexDict(OrderedDict):
         return [i for v in self.values() for i in re.findall(regex,str(v))]
 
 
+def utf8_string(s):
+    if isinstance(s, str):
+        return s.decode("utf-8","ignore").encode("utf-8","ignore")
+    elif isinstance(s, unicode):
+        return s.encode("utf-8","ignore")
+    else:
+        raise
 
 if __name__ == "__main__":
     print group_by([1,2,1,3,2])
