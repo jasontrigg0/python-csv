@@ -29,7 +29,7 @@ def readCL():
         args.max_field_size = None
     return f_in, args.cache_freq, args.trim_wide_fields, args.no_header, args.delimiter, args.max_field_size
 
-def _csv2pretty(s):
+def csv2pretty(s):
     f_in = StringIO.StringIO(s)
     return "".join(get_all_lines(f_in, 100, False, False, ","))
 
