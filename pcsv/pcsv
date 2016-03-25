@@ -3,7 +3,7 @@ import sys
 import argparse
 import csv
 import re
-from pcsv.utils import readcsv, is_int, str_is_float, str_is_int, md5hash, get_first, regex
+from pcsv.utils import readcsv, is_int, str_is_float, str_is_int, md5hash, get_first, regex, utf8_string
 from pcsv.pindent import pindent
 
 def readCL():
@@ -35,6 +35,11 @@ def readCL():
     keep_list = process_cut_csv(args.keep_list)
     drop_list = process_cut_csv(args.drop_list)
 
+    if args.delimiter == "TAB":
+        args.delimiter = '\t'
+    elif args.delimiter == "\\t":
+        args.delimiter = '\t'
+    
     return f_in, keep_list, drop_list, args.begin_code, args.grep_code, args.process_code, args.end_code, args.exceptions_allowed, args.no_header, args.delimiter, args.fix, args.autofix, args.set
 
 
@@ -47,7 +52,7 @@ def process_cut_csv(i,delim=","):
 
 def process_cut_list(l, delim=","):
     for i in l:
-        if "-" in i:
+        if "-" in i and str_is_int(i.split("-")[0]) and str_is_int(i.split("-")[1]):
             x,y = i.split('-')
             for r in range(int(x),int(y)+1):
                 yield r
@@ -57,28 +62,20 @@ def process_cut_list(l, delim=","):
             yield i
 
 
+def row2txt(row):
+    import io
+    output = io.BytesIO()
+    wr = csv.writer(output)
+    wr.writerow([utf8_string(s) for s in row])
+    return output.getvalue().strip()
+    
 #dict_and_row function to return a tuple with both unprocessed row and csv.reader() output
-#http://stackoverflow.com/questions/29971718/reading-both-raw-lines-and-dicionaries-from-csv-in-python
-class FileWrapper:
-  def __init__(self, f_in):
-    self.f_in = f_in
-    self.prev_line = None
-
-  def __iter__(self):
-    return self
-
-  def next(self):
-    self.prev_line = next(self.f_in).strip("\n\r")
-    return self.prev_line
-
-def csvlist_and_raw(f_in, delimiter):
-    wrapper = FileWrapper(f_in)
+def csv_row_and_raw(f_in, delimiter):
     #default max field size of ~131k crashes at times
     csv.field_size_limit(sys.maxsize) 
-    reader = csv.reader(wrapper, delimiter=delimiter)
+    reader = csv.reader(f_in, delimiter=delimiter)
     for csvlist in reader:
-        yield wrapper.prev_line, csvlist
-
+        yield row2txt(csvlist), csvlist
 
 
 #fast-ish index dictionary:
@@ -190,7 +187,7 @@ def process(f_in, keep_list, drop_list, begin_code, grep_code, process_code, end
     if load_set:
         s = set(l.strip() for l in open(load_set))
         
-    for i,(l,_csvlist) in enumerate(csvlist_and_raw(f_in, delimiter = delimiter)):
+    for i,(l,_csvlist) in enumerate(csv_row_and_raw(f_in, delimiter = delimiter)):
         is_header_line = (i==0 and not no_header)
         if no_header:
             #create a dummy header from the length of the line
