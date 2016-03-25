@@ -8,9 +8,9 @@ def readCL():
     usagestr = "%prog"
     parser = argparse.ArgumentParser()
     parser.add_argument("-f","--infile",default=sys.stdin)
-    parser.add_argument("-g","--group_by",help="csv list of columns to aggregate by", nargs="*", default=[])
+    parser.add_argument("-g","--group_by",help="csv list of columns to aggregate by", default=[])
     parser.add_argument("-a","--agg_fns",help="function to aggregate by. Options: 'sum','mean','max','strmax','min','strmin','std','cnt','pctile_73','val0','val1'", nargs="*", default=[])
-    parser.add_argument("-c","--agg_cols",help="columns to aggregate", nargs="*")
+    parser.add_argument("-c","--agg_cols",help="columns to aggregate")
     parser.add_argument("-d","--delimiter",default=",")
     parser.add_argument("--lam", nargs="*", default=[], help="function takes a dataframe and returns a value to add a new column or returns a subset of dataframe rows to keep only those rows. lam argument is a function body for a function that takes a dataframe variable x and returns a dataframe. For example: 'return x.iloc[0,:]' or 'return x[x[\"Age\"] == 22]' or 'x = x[x[\"Age\"] == x[\"Age\"].min()]; if len(x) == 1: return x; else: return x[x[\"Tm\"] == \"TOT\"]'")
     parser.add_argument("--append",help="append computed columns to existing file", action="store_true")
@@ -23,6 +23,12 @@ def readCL():
         args.agg_fns.append("val0")
         args.agg_fns.append("val1")
 
+    if args.group_by:
+        args.group_by = args.group_by.split(",")
+
+    if args.agg_cols:
+        args.agg_cols = args.agg_cols.split(",")
+        
     # def parse_lam(s):
     #     if not s.strip().startswith("lambda"):
     #         return pindent.pindent("lambda x:" + s)
@@ -141,6 +147,8 @@ def groupby_apply_lambda(df_groups, lambda_list):
     if df_out.index.name in df_out.columns:
         df_out = df_out.reset_index(drop=True)
     elif df_out.index.name:
+        df_out = df_out.reset_index()
+    else:
         df_out = df_out.reset_index()
     return df_out
     
