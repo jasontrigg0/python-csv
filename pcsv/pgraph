@@ -341,7 +341,11 @@ if __name__ == "__main__":
 
     with open(infile) as f_in:
         if not no_header:
-            hdr = f_in.next().strip()
+            try:
+                hdr = f_in.next().strip()
+            except StopIteration:
+                sys.stderr.write("ERROR: input has no rows. Exiting..." + "\n")
+                sys.exit(-1)
             sys.stdout.write("WARNING: using first line of input, \"{hdr}\", as header. If file doesn't have a header use -n option.".format(**vars()) + '\n')
         df = [l.strip().split(',') for l in f_in]
         l1 = len(df)
