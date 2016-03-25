@@ -34,7 +34,7 @@ def sort_df(df, sort_list, string, reverse, sort_by_row):
         tmp_df = tmp_df.sort_values(by=sort_list, ascending=(reverse))
         df = df.reindex(tmp_df.index)
     else:
-        df = df.sort_values(by=sort_list, ascending=(reverse))
+        df = df.sort_values(by=sort_list, ascending=(not reverse))
 
     if sort_by_row is not None:
         df = df.transpose() #undo the transpose above
