@@ -98,8 +98,10 @@ def parse_cell(cell, datemode):
     if cell.ctype == xlrd.XL_CELL_DATE:
         dt = xlrd.xldate.xldate_as_datetime(cell.value, datemode)
         return dt.strftime("%Y-%m-%d")
-    elif cell.ctype == xlrd.XL_CELL_NUMBER and int(cell.ctype) == cell.ctype:
+    elif cell.ctype == xlrd.XL_CELL_NUMBER and int(cell.value) == cell.value:
         return int(cell.value)
+    elif cell.ctype == xlrd.XL_CELL_NUMBER:
+        return float(cell.value)
     elif cell.ctype == xlrd.XL_CELL_ERROR:
         return "--PARSING-ERROR--"
     else:
