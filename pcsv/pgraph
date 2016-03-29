@@ -15,9 +15,10 @@ A binned scatterplot divides the points into 10 bins by x-value and plots the av
     parser.add_argument("-n","--no_header",action="store_true")
     parser.add_argument("-b","--do_bin_plot",action="store_true")
     parser.add_argument("-s","--do_scatter_plot",action="store_true")
+    parser.add_argument("-l","--do_line_plot",action="store_true")
     parser.add_argument("-o","--outfile")
     args = parser.parse_args()
-    return args.infile, args.no_header, args.do_bin_plot, args.do_scatter_plot, args.outfile
+    return args.infile, args.no_header, args.do_bin_plot, args.do_scatter_plot, args.do_line_plot, args.outfile
 
 
 def center_plot(pts, plt):
@@ -60,7 +61,8 @@ def scatter(pts, context="ggplot", title=None, line=False, outfile=None, freq_si
     else:
         plt.show()
 
-        
+def line_plot():
+    pass
 
 def discrete_cmap(N, base_cmap=None):
     """copied from https://gist.github.com/jakevdp/91077b0cae40f8f8244a
@@ -98,19 +100,6 @@ def scatter_3d(pts, context="ggplot", title=None, outfile=None):
         else:
             z_color_bins = process_color_col(z)
             plt.scatter(x, y, c=z_color_bins, cmap='jet')
-            
-        
-        # xmin = min([p[0] for p in pts])
-        # xmax = max([p[0] for p in pts])
-        # ymin = min([p[1] for p in pts])
-        # ymax = max([p[1] for p in pts])
-        # x_range = xmax - xmin; y_range = ymax - ymin
-        # eps = 0.05
-        #don't reset if the ranges are empty, which happens
-        #when plotting one point
-        # if x_range != 0 and y_range != 0:
-        #     plt.xlim(xmin - eps * x_range, xmax + eps * x_range)
-        #     plt.ylim(ymin - eps * y_range, ymax + eps * y_range)
     if title:
         plt.suptitle(title)
     if outfile:
@@ -118,6 +107,19 @@ def scatter_3d(pts, context="ggplot", title=None, outfile=None):
     else:
         plt.show()
 
+
+def line_plot(pts, outfile=None):
+    assert(len(pts) > 0)
+    N = len(pts[0])
+    x = [l[0] for l in pts]
+    for i in range(1,N):
+        y = [l[i] for l in pts]
+        plt.plot(x, y, color=discrete_cmap(N, 'rainbow')(i/float(N)), ls='--')
+    if outfile:
+        plt.savefig(outfile)
+    else:
+        plt.show()
+        
         
 def process_color_col(vals):
     """Convert a list of values eg ["black", "white", "white", "black"]
@@ -326,7 +328,7 @@ def _readcsv(f_in):
             yield OrderedDict(zip(header,line))
         
 if __name__ == "__main__":
-    infile, no_header, do_bin_plot, do_scatter_plot, outfile = readCL()
+    infile, no_header, do_bin_plot, do_scatter_plot, do_line_plot, outfile = readCL()
 
     #jtrigg avoid pandas for quicker loadtimes
     # import pandas as pd
@@ -349,8 +351,11 @@ if __name__ == "__main__":
             sys.stdout.write("WARNING: using first line of input, \"{hdr}\", as header. If file doesn't have a header use -n option.".format(**vars()) + '\n')
         df = [l.strip().split(',') for l in f_in]
         l1 = len(df)
-        #drop rows with non-floats in first two columns (third column used for coloring)
-        df = [r for r in df if all(pcsv.utils.str_is_float(x) for x in r[:2])]
+        if do_line_plot:
+            df = [r for r in df if all(pcsv.utils.str_is_float(x) for x in r)]
+        else:
+            #only drop rows with non-floats in first two columns (third column used for coloring)
+            df = [r for r in df if all(pcsv.utils.str_is_float(x) for x in r[:2])]
         l2 = len(df)
         dropped = l1 - l2
         #convert first two columns to float
@@ -363,6 +368,10 @@ if __name__ == "__main__":
     if dropped != 0:
         sys.stderr.write("WARNING: dropped {} non float values".format(l1-l2) + '\n')
 
+    if do_line_plot:
+        line_plot(df, outfile=outfile)
+        sys.exit(0)
+        
     if len(df[0]) == 1:
         plot_hist(df, outfile=outfile)
     elif len(df[0]) == 2:
