@@ -5,7 +5,7 @@ from collections import OrderedDict
 import re
 import sys
 import os
-# import numpy as np
+import inspect
 
 def readcsv(f):
     if isinstance(f, file):
@@ -201,8 +201,36 @@ class LessPager(object):
         except IOError:
             self.proc.close()
             sys.exit()
-            
 
+
+def lines2less(lines):
+    """
+    input: lines = list / iterator of strings
+    eg: lines = ["This is the first line", "This is the second line"]
+    
+    output: print those lines to stdout if the output is short + narrow
+            otherwise print the lines to less
+    """
+    lines = iter(lines) #cast list to iterator
+    
+    #print output to stdout if small, otherwise to less
+    terminal_cols = terminal_size()
+    MAX_CAT_ROWS = 20  #if there are <= this many rows then print to screen
+    
+    first_rows = list(itertools.islice(lines,0,MAX_CAT_ROWS))
+    wide = any(len(l) > terminal_cols for l in first_rows)
+    
+    lesspager = None
+    use_less = False
+    if wide or len(first_rows) == MAX_CAT_ROWS:
+        use_less = True
+        lesspager = LessPager()
+
+    for l in itertools.chain(first_rows, lines):
+        if use_less:
+            lesspager.write(l + "\n")
+        else:
+            sys.stdout.write(l + "\n")
 
 def run_streaming(cmd):
     """run a shell command and get a streaming result

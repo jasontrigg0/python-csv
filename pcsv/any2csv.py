@@ -1,10 +1,11 @@
 #!/usr/bin/env python
-import pcsv.utils
 import xlrd
 import csv
 import sys
 import xml
 
+import pcsv.utils
+import pcsv.plook
 ###
 def any2csv(txt, xls_sheet=None, xls_sheet_names=None, path=[], summary=False, to_stdout=False):
     try:
@@ -58,6 +59,13 @@ def rows2csv(rows):
 def row2csv(row):
     return rows2csv([row])
 
+def csv2rows(csv_string):
+    import StringIO
+    f = StringIO.StringIO(csv_string)
+    reader = csv.reader(f)
+    return [row for row in reader]
+        
+
 def csv2df(csv_string):
     """http://stackoverflow.com/a/22605281"""
     import sys
@@ -71,9 +79,8 @@ def csv2df(csv_string):
 def df2csv(df):
     return df.to_csv(None,index=False)
 
-def csv2pretty(txt):
-    from pcsv.plook import csv2pretty
-    return csv2pretty(txt)
+def csv2pretty(txt, max_field_size=None):
+    return pcsv.plook.csv2pretty(txt, max_field_size=max_field_size)
 
 
 
@@ -168,7 +175,6 @@ def process_dict_list_obj(dict_list_obj, path):
         for i in end_node:
             cols = cols.union(i.viewkeys())
         cols = list(cols)
-        # print "here: ", cols
         yield cols
         for i in end_node:
             r = [unicode(i.get(c,"")) for c in cols]
@@ -191,7 +197,7 @@ def follow_path(dict_list_obj, path):
             index = int(path[0])
             return follow_path(dict_list_obj[index],path[1:])
         else:
-            raise
+            raise Exception("Invalid path")
     elif isinstance(dict_list_obj, dict):
         if path[0] in dict_list_obj:
             key = path[0]
@@ -200,6 +206,6 @@ def follow_path(dict_list_obj, path):
             index = int(path[0])
             return follow_path(dict_list_obj.values()[index],path[1:])
         else:
-            raise
+            raise Exception("Invalid path")
     else:
-        raise
+        raise Exception("Invalid path")
