@@ -90,7 +90,7 @@ def print_csv(rows):
     wr = csv.writer(sys.stdout, lineterminator="\n")
     if not rows: return
     for r in rows:
-        wr.writerow([s.encode("utf-8") for s in r if s])
+        wr.writerow([s.encode("utf-8") for s in r])
 
 
 def process_rows(rows, to_stdout):
