@@ -53,8 +53,14 @@ def rows2csv(rows):
     output = io.BytesIO()
     wr = csv.writer(output)
     for r in rows:
-        wr.writerow([s.encode("utf-8") for s in r])
+        wr.writerow([to_unicode(s) for s in r])
     return output.getvalue().strip()
+
+def to_unicode(s):
+    """ """
+    if isinstance(s, str):
+        s = s.decode("utf-8","ignore")
+    return s.encode("utf-8")
 
 def row2csv(row):
     return rows2csv([row])
@@ -75,6 +81,21 @@ def csv2df(csv_string):
         from io import StringIO
     import pandas as pd
     return pd.DataFrame.from_csv(StringIO(csv_string),index_col=False)
+
+def dict2csv(d):
+    import pandas as pd
+    df =  pd.DataFrame().append(d,ignore_index=True)
+    return df2csv(df)
+
+def dict2pretty(d):
+    csv = dict2csv(d)
+    pretty = csv2pretty(csv)
+    return pretty
+
+def df2pretty(df):
+    csv = df2csv(df)
+    pretty = csv2pretty(csv)
+    return pretty
 
 def df2csv(df):
     return df.to_csv(None,index=False)
@@ -173,6 +194,8 @@ def process_dict_list_obj(dict_list_obj, path):
     if isinstance(end_node, list):
         cols = set()
         for i in end_node:
+            if isinstance(i, list):
+                raise Exception("can't convert nested lists to csv -- try using a deeper path")
             cols = cols.union(i.viewkeys())
         cols = list(cols)
         yield cols
