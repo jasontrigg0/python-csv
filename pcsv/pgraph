@@ -381,10 +381,10 @@ if __name__ == "__main__":
 
         cutoffs = [quartile_cutoffs(t) for t in transpose] #cutoffs = [(q1,median,q3)]
 
-        iqr_const = 10 #determines where to set the outlier cutoff
+        IQR_CONST = 10 #determines where to set the outlier cutoff
         
-        mins = [median - 10 * (median - q1) for q1,median,q3 in cutoffs]
-        maxs = [median + 10 * (q3 - median) for q1,median,q3 in cutoffs]
+        mins = [median - IQR_CONST * (median - q1) for q1,median,q3 in cutoffs]
+        maxs = [median + IQR_CONST * (q3 - median) for q1,median,q3 in cutoffs]
         
         df = [r for r in df if all((x > mins[i] and x < maxs[i]) for i,x in enumerate(r))]
         l3 = len(df)
