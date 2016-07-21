@@ -19,7 +19,7 @@ def readcsv(f):
     else:
         raise
 
-    
+
 def _readcsv(f_in):
     header = None
     for line in csv.reader(f_in):
@@ -30,9 +30,11 @@ def _readcsv(f_in):
 
 
 def terminal_size():
-    columns = os.popen('tput cols').read().split()[0]
-    return int(columns)
-
+    try:
+        columns = os.popen('tput cols').read().split()[0]
+        return int(columns)
+    except:
+        return None
 
 def regex(regex, string):
     """Takes one or a list of regex-es,
@@ -214,7 +216,15 @@ def lines2less(lines):
     lines = iter(lines) #cast list to iterator
     
     #print output to stdout if small, otherwise to less
-    terminal_cols = terminal_size()
+    has_term = True
+    terminal_cols = 100
+    try:
+        terminal_cols = terminal_size()
+    except:
+        #getting terminal info failed -- maybe it's a
+        #weird situation like running through cron
+        has_term = False 
+
     MAX_CAT_ROWS = 20  #if there are <= this many rows then print to screen
     
     first_rows = list(itertools.islice(lines,0,MAX_CAT_ROWS))
@@ -222,7 +232,7 @@ def lines2less(lines):
     
     lesspager = None
     use_less = False
-    if wide or len(first_rows) == MAX_CAT_ROWS:
+    if has_term and (wide or len(first_rows) == MAX_CAT_ROWS):
         use_less = True
         lesspager = LessPager()
 
