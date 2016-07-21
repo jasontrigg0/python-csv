@@ -16,9 +16,10 @@ A binned scatterplot divides the points into 10 bins by x-value and plots the av
     parser.add_argument("-b","--do_bin_plot",action="store_true")
     parser.add_argument("-s","--do_scatter_plot",action="store_true")
     parser.add_argument("-l","--do_line_plot",action="store_true")
+    parser.add_argument("-k","--keep_outliers",action="store_true", help="gets rid of points with any dimension more than 5sd away from the mean")
     parser.add_argument("-o","--outfile")
     args = parser.parse_args()
-    return args.infile, args.no_header, args.do_bin_plot, args.do_scatter_plot, args.do_line_plot, args.outfile
+    return args.infile, args.no_header, args.do_bin_plot, args.do_scatter_plot, args.do_line_plot, args.keep_outliers, args.outfile
 
 
 def center_plot(pts, plt):
@@ -326,9 +327,15 @@ def _readcsv(f_in):
             header = line
         else:
             yield OrderedDict(zip(header,line))
-        
+
+def quartile_cutoffs(l):
+    #return (25,50,75%ile) of list
+    l_sort = sorted(l)
+    n = len(l)
+    return l_sort[int(n/4.0)],l_sort[int(n/2.0)],l_sort[int(3*n/4.0)]
+            
 if __name__ == "__main__":
-    infile, no_header, do_bin_plot, do_scatter_plot, do_line_plot, outfile = readCL()
+    infile, no_header, do_bin_plot, do_scatter_plot, do_line_plot, keep_outliers, outfile = readCL()
 
     #jtrigg avoid pandas for quicker loadtimes
     # import pandas as pd
@@ -367,6 +374,24 @@ if __name__ == "__main__":
     
     if dropped != 0:
         sys.stderr.write("WARNING: dropped {} non float values".format(l1-l2) + '\n')
+        
+    if not keep_outliers:
+        import numpy as np
+        transpose = zip(*df)
+
+        cutoffs = [quartile_cutoffs(t) for t in transpose] #cutoffs = [(q1,median,q3)]
+
+        iqr_const = 10 #determines where to set the outlier cutoff
+        
+        mins = [median - 10 * (median - q1) for q1,median,q3 in cutoffs]
+        maxs = [median + 10 * (q3 - median) for q1,median,q3 in cutoffs]
+        
+        df = [r for r in df if all((x > mins[i] and x < maxs[i]) for i,x in enumerate(r))]
+        l3 = len(df)
+        if l2 - l3 != 0:
+            sys.stderr.write("WARNING: dropped {} outliers".format(l2-l3) + "\n")
+        print mins, maxs
+            
 
     if do_line_plot:
         line_plot(df, outfile=outfile)
