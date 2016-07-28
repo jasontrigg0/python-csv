@@ -135,6 +135,13 @@ def parse_cell(cell, datemode):
     else:
         return cell.value.encode("utf-8")
 
+def get_cell(sh,i,j):
+    try:
+        cell = sh.cell(i,j)
+    except IndexError:
+        cell = xlrd.sheet.Cell(xlrd.XL_CELL_TEXT,"")
+    return cell
+    
     
 def read_xls(txt, sheet, print_sheet_names):
     #when a filename is passed, I think xlrd reads from it twice, which breaks on /dev/stdin
@@ -156,7 +163,7 @@ def read_xls(txt, sheet, print_sheet_names):
 
     wr = csv.writer(sys.stdout, lineterminator="\n")
     for i in xrange(sh.nrows):
-        r = [parse_cell(sh.cell(i,j), wb.datemode) for j in xrange(sh.ncols)]
+        r = [parse_cell(get_cell(sh,i,j), wb.datemode) for j in xrange(sh.ncols)]
         wr.writerow(r)
 
 
