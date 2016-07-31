@@ -386,7 +386,7 @@ if __name__ == "__main__":
         mins = [median - IQR_CONST * (median - q1) for q1,median,q3 in cutoffs]
         maxs = [median + IQR_CONST * (q3 - median) for q1,median,q3 in cutoffs]
         
-        df = [r for r in df if all((x > mins[i] and x < maxs[i]) for i,x in enumerate(r))]
+        df = [r for r in df if all((x >= mins[i] and x =< maxs[i]) for i,x in enumerate(r))]
         l3 = len(df)
         if l2 - l3 != 0:
             sys.stderr.write("WARNING: dropped {} outliers".format(l2-l3) + "\n")
