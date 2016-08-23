@@ -3,8 +3,10 @@ import sys
 import argparse
 import csv
 import re
+import pcsv.utils
 from pcsv.utils import readcsv, is_int, str_is_float, str_is_int, md5hash, get_first, regex, utf8_string
 from pcsv.pindent import pindent
+
 
 def readCL():
     parser = argparse.ArgumentParser()
@@ -275,8 +277,7 @@ if __name__ == "__main__":
     f_in, keep_list, drop_list, begin_code, grep_code, process_code, end_code, exceptions_allowed, no_header, delimiter, fix, autofix, load_set = readCL()
     #following two lines solve 'Broken pipe' error when piping
     #script output into head
-    from signal import signal, SIGPIPE, SIG_DFL
-    signal(SIGPIPE,SIG_DFL)
+    pcsv.utils.fix_broken_pipe()
 
     if begin_code:
         begin_code = [pindent(code) for code in begin_code]

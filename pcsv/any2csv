@@ -22,6 +22,7 @@ def readCL():
 
 if __name__ == "__main__":
     infile, xls_sheet, path, summary = readCL()
+    pcsv.utils.fix_broken_pipe()
     txt = infile.read()
     if not txt:
         sys.stderr.write("ERROR: empty input found. Exiting..." + "\n")
