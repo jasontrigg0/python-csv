@@ -359,14 +359,14 @@ if __name__ == "__main__":
         df = [l.strip().split(',') for l in f_in]
         l1 = len(df)
         if do_line_plot:
-            df = [r for r in df if all(pcsv.utils.str_is_float(x) for x in r)]
+            df = [[float(x) for x in r] for r in df if all(pcsv.utils.str_is_float(x) for x in r)]
         else:
             #only drop rows with non-floats in first two columns (third column used for coloring)
             df = [r for r in df if all(pcsv.utils.str_is_float(x) for x in r[:2])]
+            df = [[float(x) for x in r[:2]] + r[2:] for r in df]
         l2 = len(df)
         dropped = l1 - l2
         #convert first two columns to float
-        df = [[float(x) for x in r[:2]] + r[2:] for r in df]
 
     if len(df) == 0:
         sys.stderr.write("ERROR: input has no rows. Exiting..." + "\n")
@@ -386,7 +386,7 @@ if __name__ == "__main__":
         mins = [median - IQR_CONST * (median - q1) for q1,median,q3 in cutoffs]
         maxs = [median + IQR_CONST * (q3 - median) for q1,median,q3 in cutoffs]
         
-        df = [r for r in df if all((x >= mins[i] and x =< maxs[i]) for i,x in enumerate(r))]
+        df = [r for r in df if all((x >= mins[i] and x <= maxs[i]) for i,x in enumerate(r))]
         l3 = len(df)
         if l2 - l3 != 0:
             sys.stderr.write("WARNING: dropped {} outliers".format(l2-l3) + "\n")
