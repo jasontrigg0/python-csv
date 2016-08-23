@@ -355,7 +355,7 @@ if __name__ == "__main__":
             except StopIteration:
                 sys.stderr.write("ERROR: input has no rows. Exiting..." + "\n")
                 sys.exit(-1)
-            sys.stdout.write("WARNING: using first line of input, \"{hdr}\", as header. If file doesn't have a header use -n option.".format(**vars()) + '\n')
+            sys.stdout.write("WARNING: pgraph using first line of input, \"{hdr}\", as header. If file doesn't have a header use -n option.".format(**vars()) + '\n')
         df = [l.strip().split(',') for l in f_in]
         l1 = len(df)
         if do_line_plot:

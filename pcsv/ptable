@@ -82,7 +82,7 @@ if __name__ == "__main__":
     if not no_header:
         dat = pd.read_csv(f_in, dtype="object", delimiter=delimiter)
         hdr = ",".join(dat.columns)
-        sys.stderr.write("WARNING: using first line of input, \"{hdr}\", as header. If file doesn't have a header use -n option.".format(**vars()) + "\n")
+        sys.stderr.write("WARNING: ptable using first line of input, \"{hdr}\", as header. If file doesn't have a header use -n option.".format(**vars()) + "\n")
     else:
         dat = pd.read_csv(f_in, dtype="object", header=None, delimiter=delimiter)
     # if len(dat.columns) == 2:
