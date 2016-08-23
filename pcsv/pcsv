@@ -23,7 +23,8 @@ def readCL():
     parser.add_argument("--fix", action="store_true")
     parser.add_argument("--autofix",action="store_true")
     parser.add_argument("--set", help="load a file with no header, storing each line as an element of a set")
-
+    parser.add_argument("--no_print",action="store_true")
+    
     args = parser.parse_args()
 
     if sys.stdin.isatty() and not args.infile:
@@ -42,7 +43,7 @@ def readCL():
     elif args.delimiter == "\\t":
         args.delimiter = '\t'
     
-    return f_in, keep_list, drop_list, args.begin_code, args.grep_code, args.process_code, args.end_code, args.exceptions_allowed, args.no_header, args.delimiter, args.fix, args.autofix, args.set
+    return f_in, keep_list, drop_list, args.begin_code, args.grep_code, args.process_code, args.end_code, args.exceptions_allowed, args.no_header, args.delimiter, args.fix, args.autofix, args.set, args.no_print
 
 
 def process_cut_csv(i,delim=","):
@@ -168,7 +169,7 @@ def gen_outhdr(hdr, add_list, keep_list, drop_list):
 
 
 # @profile
-def process(f_in, keep_list, drop_list, begin_code, grep_code, process_code, end_code, exceptions_allowed, no_header, delimiter, fix, autofix, load_set):
+def process(f_in, keep_list, drop_list, begin_code, grep_code, process_code, end_code, exceptions_allowed, no_header, delimiter, fix, autofix, load_set, no_print):
     in_hdr = None
     out_hdr = None
     has_exceptions = False
@@ -195,9 +196,6 @@ def process(f_in, keep_list, drop_list, begin_code, grep_code, process_code, end
             #create a dummy header from the length of the line
             in_hdr = ["X"+str(j) for j,_ in enumerate(_csvlist)]
             hdrhash = dict((jx,j) for j,jx in enumerate(in_hdr))
-            #jtrigg@20151120 out_hdr computed below
-            # outhdr = in_hdr[:]
-            # outhdr = gen_outhdr(in_hdr, add_list, keep_list, drop_list)
             r = IndexDict(hdrhash,_csvlist) #IndexDict can be accessed by string or index (all keys must be strings)
         elif not in_hdr:
             in_hdr = _csvlist[:]
@@ -206,14 +204,14 @@ def process(f_in, keep_list, drop_list, begin_code, grep_code, process_code, end
                 #create a dummy header from the length of the line
                 in_hdr = ["X"+str(j) for j,_ in enumerate(_csvlist)]
             hdrhash = dict((jx,j) for j,jx in enumerate(in_hdr))
-            #jtrigg@20151120 out_hdr computed below
-            # outhdr = in_hdr[:]
-            # outhdr = gen_outhdr(in_hdr, add_list, keep_list, drop_list)
-            #r on the first line is just a dictionary from in_hdr -> in_hdr
+            if not _csvlist:
+                _csvlist = [''] * len(in_hdr)
+            r = IndexDict(hdrhash,_csvlist) #IndexDict can be accessed by string or index (all keys must be strings)
+            if no_print:
+                for code in process_code:
+                    exec(code)
             continue
         else:
-            #jtrigg@20150518: removing do_write variable
-            # if len(_csvlist) != len(hdr) and not do_write and not has_printed_incomplete_line:
             if len(_csvlist) != len(in_hdr):
                 if fix:
                     sys.stdout.write(l + "\n")
@@ -234,10 +232,7 @@ def process(f_in, keep_list, drop_list, begin_code, grep_code, process_code, end
             if grep_code and not is_header_line and not eval(grep_code):
                 continue
 
-            #do_write on every line including header
-            #otherwise skip the header
-            # if do_write or (process_code and not is_header_line):
-            if (process_code and not is_header_line):
+            if process_code and (not is_header_line):
                 for code in process_code:
                     exec(code)
         except:
@@ -249,19 +244,14 @@ def process(f_in, keep_list, drop_list, begin_code, grep_code, process_code, end
                     has_exceptions = True
                 continue
 
-        #jtrigg@20150518: phasing out do_write
-        # if not do_write:
-        #     rout = [str(r.get(h,"")) for h in outhdr]
-        #     write_line(rout)
-
-        if not out_hdr:
+        if not out_hdr and not no_print:
             add_list = [k for k in r.keys() if k not in in_hdr] #add any keys from r that aren't in the in_hdr
             out_hdr = gen_outhdr(in_hdr, add_list, keep_list, drop_list)
             #set and print header
             csv.writer(sys.stdout, lineterminator= '\n').writerows([out_hdr])
             
 
-        if fix:
+        if fix or no_print:
             pass
         else:
             #print regular line
@@ -274,7 +264,7 @@ def process(f_in, keep_list, drop_list, begin_code, grep_code, process_code, end
 
 
 if __name__ == "__main__":
-    f_in, keep_list, drop_list, begin_code, grep_code, process_code, end_code, exceptions_allowed, no_header, delimiter, fix, autofix, load_set = readCL()
+    f_in, keep_list, drop_list, begin_code, grep_code, process_code, end_code, exceptions_allowed, no_header, delimiter, fix, autofix, load_set, no_print = readCL()
     #following two lines solve 'Broken pipe' error when piping
     #script output into head
     pcsv.utils.fix_broken_pipe()
@@ -290,4 +280,4 @@ if __name__ == "__main__":
     #preprocess /.*/ syntax
     grep_code = gen_grep_code(grep_code)
 
-    process(f_in,keep_list,drop_list,begin_code,grep_code,process_code,end_code,exceptions_allowed,no_header,delimiter,fix,autofix,load_set)
+    process(f_in,keep_list,drop_list,begin_code,grep_code,process_code,end_code,exceptions_allowed,no_header,delimiter,fix,autofix,load_set, no_print)
