@@ -115,7 +115,7 @@ def line_plot(pts, outfile=None):
     x = [l[0] for l in pts]
     for i in range(1,N):
         y = [l[i] for l in pts]
-        plt.plot(x, y, color=discrete_cmap(N, 'rainbow')(i/float(N)), ls='--')
+        plt.plot(x, y, color=discrete_cmap(N, 'rainbow')(i/float(N)), ls="-")
     if outfile:
         plt.savefig(outfile)
     else:
