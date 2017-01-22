@@ -2,7 +2,7 @@
 from matplotlib import pyplot as plt
 import argparse
 import sys
-import pcsv.utils
+import jtutils
 import csv
 
 def readCL():
@@ -40,7 +40,7 @@ def counter(l):
     for i in l:
         cnt_dict[tuple(i)] = cnt_dict.get(tuple(i),0) + 1
     return cnt_dict
-        
+
 #also can try context="fivethirtyeight"
 def scatter(pts, context="ggplot", title=None, line=False, outfile=None, freq_sizes=False):
     with plt.style.context(context):
@@ -120,13 +120,13 @@ def line_plot(pts, outfile=None):
         plt.savefig(outfile)
     else:
         plt.show()
-        
-        
+
+
 def process_color_col(vals):
     """Convert a list of values eg ["black", "white", "white", "black"]
     to a list of floats [0,1,1,0] for use in matplotlib colormaps
     """
-    all_float = all(pcsv.utils.str_is_float(v) for v in vals)
+    all_float = all(jtutils.str_is_float(v) for v in vals)
     distinct = set(vals)
     if not all_float and len(distinct) <= 5:
         val_to_id = dict((v,i) for i,v in enumerate(distinct))
@@ -144,7 +144,7 @@ def process_color_col(vals):
             vals = [v / maxval for v in vals]
         return vals
 
-        
+
 def bin_plot(pts, num_bins = 10, outfile=None):
     #sort pts by x value:
     pts.sort(key = lambda x: x[0])
@@ -169,7 +169,7 @@ def curve_fit(xy_pts, fn, plot_points=True):
     import numpy
     x, y = zip(*xy_pts)
     popt, pcov = scipy.optimize.curve_fit(fn, x, y, [1.0,1.0])
-    
+
     # Plot data
     if plot_points:
         plt.plot(x, y, 'or')
@@ -183,13 +183,13 @@ def curve_fit(xy_pts, fn, plot_points=True):
 def ls_dist_curve_fit(pts, fn, cnt=25):
     #least square curve fitting
     import matplotlib.pyplot as plt
-    from pcsv.utils import pairwise
+    from jtutils import pairwise
     n, bins, patches = plt.hist(pts, cnt, normed=1, histtype='stepfilled', rwidth=0.8)
     bin_mids = [(b1 + b2) / 2.0 for b1,b2 in pairwise(bins) if b2]
     print len(bins)
     xy_pts = zip(bin_mids,n)
     curve_fit(xy_pts,fn,plot_points=False)
-    
+
 
 def mle_dist_curve_fit(pts, fn, cnt=25):
     #maximum likelihood curve fitting
@@ -273,7 +273,7 @@ def mle_fit_pareto_curve(pts):
     # res = scipy.optimize.minimize(neg_llh, [1.0,1.0], jac=grad, args=(min_x,pts), method='nelder-mead', bounds=[(0.01,None),(0.01,None)], options={"disp":True})
     print res
     return res
-    
+
 
 def plot_hist(pts,cnt=25,context="ggplot",outfile=None):
     pts = [x[0] for x in pts]
@@ -284,7 +284,7 @@ def plot_hist(pts,cnt=25,context="ggplot",outfile=None):
 
     #default x_range of the hist is [x_min, x_max]
     #increase this size a bit to make space in case some
-    #bins are *centered* at x_min or x_max 
+    #bins are *centered* at x_min or x_max
     #(this happens in dice roll histogram with 6 bins)
     bin_width = (x_max - x_min) / (cnt - 1)
     x_range = [x_min - 0.5 * bin_width, x_max + 0.5 * bin_width]
@@ -333,7 +333,7 @@ def quartile_cutoffs(l):
     l_sort = sorted(l)
     n = len(l)
     return l_sort[int(n/4.0)],l_sort[int(n/2.0)],l_sort[int(3*n/4.0)]
-            
+
 if __name__ == "__main__":
     infile, no_header, do_bin_plot, do_scatter_plot, do_line_plot, keep_outliers, outfile = readCL()
 
@@ -359,10 +359,10 @@ if __name__ == "__main__":
         df = [l.strip().split(',') for l in f_in]
         l1 = len(df)
         if do_line_plot:
-            df = [[float(x) for x in r] for r in df if all(pcsv.utils.str_is_float(x) for x in r)]
+            df = [[float(x) for x in r] for r in df if all(jtutils.str_is_float(x) for x in r)]
         else:
             #only drop rows with non-floats in first two columns (third column used for coloring)
-            df = [r for r in df if all(pcsv.utils.str_is_float(x) for x in r[:2])]
+            df = [r for r in df if all(jtutils.str_is_float(x) for x in r[:2])]
             df = [[float(x) for x in r[:2]] + r[2:] for r in df]
         l2 = len(df)
         dropped = l1 - l2
@@ -371,10 +371,10 @@ if __name__ == "__main__":
     if len(df) == 0:
         sys.stderr.write("ERROR: input has no rows. Exiting..." + "\n")
         sys.exit(-1)
-    
+
     if dropped != 0:
         sys.stderr.write("WARNING: dropped {} non float values".format(l1-l2) + '\n')
-        
+
     if not keep_outliers:
         import numpy as np
         transpose = zip(*df)
@@ -382,21 +382,21 @@ if __name__ == "__main__":
         cutoffs = [quartile_cutoffs(t) for t in transpose] #cutoffs = [(q1,median,q3)]
 
         IQR_CONST = 10 #determines where to set the outlier cutoff
-        
+
         mins = [median - IQR_CONST * (median - q1) for q1,median,q3 in cutoffs]
         maxs = [median + IQR_CONST * (q3 - median) for q1,median,q3 in cutoffs]
-        
+
         df = [r for r in df if all((x >= mins[i] and x <= maxs[i]) for i,x in enumerate(r))]
         l3 = len(df)
         if l2 - l3 != 0:
             sys.stderr.write("WARNING: dropped {} outliers".format(l2-l3) + "\n")
         print mins, maxs
-            
+
 
     if do_line_plot:
         line_plot(df, outfile=outfile)
         sys.exit(0)
-        
+
     if len(df[0]) == 1:
         plot_hist(df, outfile=outfile)
     elif len(df[0]) == 2:

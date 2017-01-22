@@ -2,7 +2,7 @@
 import argparse
 import codecs
 import sys
-import pcsv.utils
+import jtutils
 import pcsv.plook
 import itertools
 
@@ -30,5 +30,5 @@ if __name__ == "__main__":
     f_in, cache_freq, no_header, delimiter, max_field_size  = readCL()
 
     output = pcsv.plook.get_all_lines(f_in, cache_freq, no_header, delimiter, max_field_size)
-    
-    pcsv.utils.lines2less(output)
+
+    jtutils.lines2less(output)

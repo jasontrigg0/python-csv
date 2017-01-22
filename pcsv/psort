@@ -2,7 +2,7 @@
 import argparse
 import pandas as pd
 import sys
-import pcsv.utils
+import jtutils
 
 def readCL():
     parser = argparse.ArgumentParser()
@@ -39,16 +39,16 @@ def sort_df(df, sort_list, string, reverse, sort_by_row):
     if sort_by_row is not None:
         df = df.transpose() #undo the transpose above
     return df
-    
+
 
 if __name__ == "__main__":
     infile, sort_list, reverse, string, delimiter, no_header, sort_by_row = readCL()
-    pcsv.utils.fix_broken_pipe()
+    jtutils.fix_broken_pipe()
     def proc_sort_list(sort_list, df):
         for index in sort_list:
             if index in df.columns:
                 yield index
-            elif pcsv.utils.str_is_int(index):
+            elif jtutils.str_is_int(index):
                 yield df.columns[int(index)]
             else:
                 raise Exception("ERROR: invalid sort_list element {index}".format(**vars()))

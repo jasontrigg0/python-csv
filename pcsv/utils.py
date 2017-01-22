@@ -6,6 +6,7 @@ import re
 import sys
 import os
 import inspect
+from jtutils import pairwise
 
 def readcsv(f):
     if isinstance(f, file):
@@ -29,13 +30,6 @@ def _readcsv(f_in):
             yield OrderedDict(zip(header,line))
 
 
-def terminal_size():
-    try:
-        columns = os.popen('tput cols').read().split()[0]
-        return int(columns)
-    except:
-        return None
-
 def regex(regex, string):
     """Takes one or a list of regex-es,
     looks for them in one or a list of strings s
@@ -50,16 +44,16 @@ def regex(regex, string):
         string_list = [string]
     else:
         string_list = string
-        
+
     all_matches = [i for s in string_list for regex in regex_list for i in re.findall(regex,s)]
     return get_first(all_matches,"")
-            
+
 def get_first(l, default=None):
     if l:
         return l[0]
     else:
         return default
-            
+
 def csv_string(rows):
     """http://stackoverflow.com/a/9157370"""
     import io
@@ -69,9 +63,9 @@ def csv_string(rows):
     for r in rows:
         writer.writerow(r)
     return output.getvalue()
-    
-            
-            
+
+
+
 def df2csv(df):
     return df.to_csv(None,index=False)
 
@@ -81,7 +75,7 @@ def df2pretty(df):
     s = df2csv(df)
     return csv2pretty(s)
 
-    
+
 def basic_logger(name, stream=sys.stderr):
     #usually called as
     #basic_logger(__name__)
@@ -97,8 +91,8 @@ def basic_logger(name, stream=sys.stderr):
     logger.addHandler(handler)
     logger.setLevel(logging.DEBUG)
     return logger
-    
-            
+
+
 def group_by(l, col=None):
     """Example:
     >>> l = [{"a":1},{"a":2}]
@@ -117,13 +111,13 @@ def aggregate(l, f, col=None):
     return dict((key,f(group)) for key,group in group_by(l,col).items())
 
 
-    
+
 #http://stackoverflow.com/questions/5098580/implementing-argmax-in-python
 def argmax(l,f=None):
     if f:
         l = [f(i) for i in l]
     return max(enumerate(l), key=lambda x:x[1])[0]
-    
+
 def csv2dict(infile, key, value=None, multi=False):
     #convert a csv to a dictionary:
     #infile: file to read in
@@ -166,14 +160,6 @@ def csv2dict(infile, key, value=None, multi=False):
             dict_out[k] = v
     return dict_out
 
-def rand():
-    import random
-    return str(round(random.random(),4))
-
-def md5hash(s):
-    import md5
-    return md5.md5(s).hexdigest()
-
 def run(cmd):
     import subprocess
     pipes = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -188,59 +174,9 @@ def run_report_errors(cmd):
         sys.stderr.write(err + "\n")
 
 
-        
-class LessPager(object):
-    """
-    Use for streaming writes to a less process
-    Taken from pydoc.pipepager:
-    /usr/lib/python2.7/pydoc.py
-    """
-    def __init__(self):
-        self.proc = os.popen("less -S", 'w')
-    def write(self, text):
-        try:
-            self.proc.write(text)
-        except IOError:
-            self.proc.close()
-            sys.exit()
 
 
-def lines2less(lines):
-    """
-    input: lines = list / iterator of strings
-    eg: lines = ["This is the first line", "This is the second line"]
-    
-    output: print those lines to stdout if the output is short + narrow
-            otherwise print the lines to less
-    """
-    lines = iter(lines) #cast list to iterator
-    
-    #print output to stdout if small, otherwise to less
-    has_term = True
-    terminal_cols = 100
-    try:
-        terminal_cols = terminal_size()
-    except:
-        #getting terminal info failed -- maybe it's a
-        #weird situation like running through cron
-        has_term = False 
 
-    MAX_CAT_ROWS = 20  #if there are <= this many rows then print to screen
-    
-    first_rows = list(itertools.islice(lines,0,MAX_CAT_ROWS))
-    wide = any(len(l) > terminal_cols for l in first_rows)
-    
-    lesspager = None
-    use_less = False
-    if has_term and (wide or len(first_rows) == MAX_CAT_ROWS):
-        use_less = True
-        lesspager = LessPager()
-
-    for l in itertools.chain(first_rows, lines):
-        if use_less:
-            lesspager.write(l + "\n")
-        else:
-            sys.stdout.write(l + "\n")
 
 def run_streaming(cmd):
     """run a shell command and get a streaming result
@@ -275,7 +211,7 @@ def run_streaming(cmd):
     p.wait() # wait for the subprocess to exit
 
 
-                    
+
 def open_unix_sorted_csv(filename, keys):
     """return a generator with lines from the sorted file
     """
@@ -289,7 +225,7 @@ def open_unix_sorted_csv(filename, keys):
     for line in run_streaming(cmdlist):
         yield line
 
-    
+
 def look(obj):
     import inspect
     if hasattr(obj, '__call__'):
@@ -326,11 +262,11 @@ def multithread(function_to_run, list_of_items, num_threads):
     #gets another item and runs that
     from multiprocessing import Pool
     pool = Pool(processes=num_threads)
-    pool.map(function_to_run, list_of_items) 
+    pool.map(function_to_run, list_of_items)
 
 def multithread_chunks(function_to_run, list_of_items, num_threads):
     #Splits up the individual elements of list_of_items
-    #between num_threads. 
+    #between num_threads.
 
     ####Each thread runs####
     #for item in my_thread_items:
@@ -396,36 +332,10 @@ def check_memory_usage():
     return 1000 * resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 
 
-def fix_broken_pipe():
-    #following two lines solve 'Broken pipe' error when piping
-    #script output into head
-    from signal import signal, SIGPIPE, SIG_DFL
-    signal(SIGPIPE,SIG_DFL)
 
-    
-def pairwise(iterable):
-    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
-    a, b = itertools.tee(iterable)
-    next(b, None)
-    return itertools.izip(a, b)
 
-def threewise(iterable):
-    """s -> (None, s0, s1), (s0, s1, s2), ... (sn-1, sn, None)
-    example:
-    for (last, cur, next) in threewise(l):
-    """
-    a, b, c = itertools.tee(iterable,3)
-    def prepend(val, l):
-        yield val
-        for i in l: yield i
-    def postpend(val, l):
-        for i in l: yield i
-        yield val
-    next(c,None)
-    for _xa, _xb, _xc in itertools.izip(prepend(None,a), b, postpend(None,c)):
-        yield (_xa, _xb, _xc)
 
-        
+
 def is_int(var):
     return isinstance( var, ( int, long ) )
 
@@ -479,13 +389,6 @@ class IndexDict(OrderedDict):
         return [i for v in self.values() for i in re.findall(regex,str(v))]
 
 
-def utf8_string(s):
-    if isinstance(s, str):
-        return s.decode("utf-8","ignore").encode("utf-8","ignore")
-    elif isinstance(s, unicode):
-        return s.encode("utf-8","ignore")
-    else:
-        raise
 
 if __name__ == "__main__":
     print group_by([1,2,1,3,2])
@@ -493,5 +396,5 @@ if __name__ == "__main__":
     print group_by([[1,2],[1,3],[3,4]],1)
     print aggregate([[1,2],[1,3],[3,4]],len,0)
 
-    
+
     print list(pairwise([1,2,3,4]))

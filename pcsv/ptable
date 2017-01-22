@@ -2,7 +2,7 @@
 import optparse
 import pandas as pd
 import sys
-import pcsv.utils
+import jtutils
 
 def readCL():
     usagestr = "%prog -f infile col1 [col2]"
@@ -21,7 +21,7 @@ def readCL():
     elif len(args) == 2:
         col1 = args[0]
         col2 = args[1]
-        
+
 
     return options.infile, col1, col2, options.no_header, options.delimiter
 
@@ -75,10 +75,10 @@ def two_col(col1,col2):
         print pd.crosstab(col1,col2)
 
 
-    
+
 if __name__ == "__main__":
     f_in, col1, col2, no_header, delimiter = readCL()
-    pcsv.utils.fix_broken_pipe()
+    jtutils.fix_broken_pipe()
     if not no_header:
         dat = pd.read_csv(f_in, dtype="object", delimiter=delimiter)
         hdr = ",".join(dat.columns)

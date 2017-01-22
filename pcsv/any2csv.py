@@ -4,7 +4,7 @@ import csv
 import sys
 import xml
 
-import pcsv.utils
+import jtutils
 import pcsv.plook
 ###
 def any2csv(txt, xls_sheet=None, xls_sheet_names=None, path=[], summary=False, to_stdout=False):
@@ -22,7 +22,7 @@ def any2csv(txt, xls_sheet=None, xls_sheet_names=None, path=[], summary=False, t
         xml2csv(txt, path, summary, to_stdout)
     except xml.parsers.expat.ExpatError:
         pass
-    
+
     raise Exception("ERROR: File doesn't match xls, json or xml format!" + "\n")
 
 
@@ -70,7 +70,7 @@ def csv2rows(csv_string):
     f = StringIO.StringIO(csv_string)
     reader = csv.reader(f)
     return [row for row in reader]
-        
+
 
 def csv2df(csv_string):
     """http://stackoverflow.com/a/22605281"""
@@ -120,7 +120,7 @@ def process_rows(rows, to_stdout):
         sys.exit()
     else:
         return rows2csv(rows)
-###    
+###
 
 def parse_cell(cell, datemode):
     if cell.ctype == xlrd.XL_CELL_DATE:
@@ -141,12 +141,12 @@ def get_cell(sh,i,j):
     except IndexError:
         cell = xlrd.sheet.Cell(xlrd.XL_CELL_TEXT,"")
     return cell
-    
-    
+
+
 def read_xls(txt, sheet, print_sheet_names):
     #when a filename is passed, I think xlrd reads from it twice, which breaks on /dev/stdin
     #so try passing file_contents instead of filename
-    wb = xlrd.open_workbook(file_contents = txt) 
+    wb = xlrd.open_workbook(file_contents = txt)
 
     sheet_names = wb.sheet_names()
     if print_sheet_names:
@@ -156,7 +156,7 @@ def read_xls(txt, sheet, print_sheet_names):
 
     if sheet in sheet_names:
         sh = wb.sheet_by_name(sheet)
-    elif pcsv.utils.str_is_int(sheet) and int(sheet) < len(sheet_names):
+    elif jtutils.str_is_int(sheet) and int(sheet) < len(sheet_names):
         sh = wb.sheet_by_index(int(sheet))
     else:
         raise Exception("-s argument not in xls list of sheets ({})".format(str(sheet_names)))
@@ -188,10 +188,10 @@ def field_summary(dict_list_obj):
         elif isinstance(val, dict):
             for a,b in val.items()[::-1]:
                 stack.append((a,b,depth+1))
-            
-        
+
+
 def process_dict_list_obj(dict_list_obj, path):
-    """json-style nested objects consisting of 
+    """json-style nested objects consisting of
     a (dictionary OR list) of (dictionary OR list) of (dictionary OR list) etc
     """
     if not isinstance(path, list):
@@ -215,15 +215,35 @@ def process_dict_list_obj(dict_list_obj, path):
         r = [unicode(end_node.get(c,"")) for c in cols]
         yield r
     else:
-        raise Exception("ERROR: invalid path ({path}). Path doesn't end in a dictionary or list.")
+        raise_path_error()
 
+def raise_path_error():
+    raise Exception("Invalid path: path should end in a dictionary or a list, not a single item")
 
 def follow_path(dict_list_obj, path):
     if path == []:
         return dict_list_obj
 
+    WILDCARD = '*'
+    if path[0] == WILDCARD:
+        if isinstance(dict_list_obj, list):
+            out = []
+            for k in dict_list_obj:
+                sub_path = follow_path(k,path[1:])
+                if isinstance(sub_path, list):
+                    out += sub_path
+                elif isinstance(sub_path, dict):
+                    out.append(sub_path)
+                else:
+                    raise_path_error()
+            return out
+        elif isinstance(dict_list_obj, dict):
+            raise Exception("In path, only use wildcards to handle lists")
+        else:
+            raise Exception("Invalid path")
+
     if isinstance(dict_list_obj, list):
-        if pcsv.utils.str_is_int(path[0]):
+        if jtutils.str_is_int(path[0]):
             index = int(path[0])
             return follow_path(dict_list_obj[index],path[1:])
         else:
@@ -232,10 +252,10 @@ def follow_path(dict_list_obj, path):
         if path[0] in dict_list_obj:
             key = path[0]
             return follow_path(dict_list_obj[key],path[1:])
-        elif pcsv.utils.str_is_int(path[0]):
+        elif jtutils.str_is_int(path[0]):
             index = int(path[0])
             return follow_path(dict_list_obj.values()[index],path[1:])
         else:
             raise Exception("Invalid path")
     else:
-        raise Exception("Invalid path")
+        raise_path_error()

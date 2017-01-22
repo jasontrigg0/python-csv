@@ -4,7 +4,7 @@ import csv
 import argparse
 import sys
 import xml
-import pcsv.utils
+import jtutils
 import pcsv.any2csv
 
 def readCL():
@@ -22,7 +22,7 @@ def readCL():
 
 if __name__ == "__main__":
     infile, xls_sheet, path, summary = readCL()
-    pcsv.utils.fix_broken_pipe()
+    jtutils.fix_broken_pipe()
     txt = infile.read()
     if not txt:
         sys.stderr.write("ERROR: empty input found. Exiting..." + "\n")
