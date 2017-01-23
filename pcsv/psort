@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import pcsv.pindent
 import pandas as pd
 import sys
 import jtutils
@@ -12,13 +13,21 @@ def readCL():
     parser.add_argument("-s","--string",action="store_true",help="sort as string (default is float)")
     parser.add_argument("-d","--delimiter", default=",")
     parser.add_argument("-n","--no_header",action="store_true")
+    parser.add_argument("-l","--lam", nargs="*", default=[], help="function body to sort by. For example: 'return str(x) or return (x-2)**2'")
     parser.add_argument("--sort_by_row",type=int,help="Sort the columns by a row instead of the other way around. Rows are zero-indexed.")
     args = parser.parse_args()
+
+    if args.lam:
+        for i,fn_string in enumerate(args.lam):
+            fn_string = "def lam{i}(x): {fn_string}".format(**vars())
+            exec(pcsv.pindent.pindent(fn_string))
+    args.lam = vars()["lam0"]
+
     args.sort_list = args.sort_list.split(",")
-    return args.infile, args.sort_list, args.reverse, args.string, args.delimiter, args.no_header, args.sort_by_row
+    return args.infile, args.sort_list, args.reverse, args.string, args.delimiter, args.no_header, args.lam, args.sort_by_row
 
 
-def sort_df(df, sort_list, string, reverse, sort_by_row):
+def sort_df(df, sort_list, string, reverse, lam, sort_by_row):
     if sort_by_row is not None:
         sort_list = [sort_by_row]
     else:
@@ -26,11 +35,16 @@ def sort_df(df, sort_list, string, reverse, sort_by_row):
 
     if sort_by_row is not None:
         df = df.transpose() #transpose and then handle normally
-    
-    if not string:
+
+    if lam:
+        sort_fn = lam
+    elif not string:
+        sort_fn = lambda x: float(x)
+
+    if sort_fn:
         tmp_df = pd.DataFrame()
         for s in sort_list:
-            tmp_df[s] = df[s].apply(lambda x: float(x))
+            tmp_df[s] = df[s].apply(sort_fn)
         tmp_df = tmp_df.sort_values(by=sort_list, ascending=(reverse))
         df = df.reindex(tmp_df.index)
     else:
@@ -42,7 +56,7 @@ def sort_df(df, sort_list, string, reverse, sort_by_row):
 
 
 if __name__ == "__main__":
-    infile, sort_list, reverse, string, delimiter, no_header, sort_by_row = readCL()
+    infile, sort_list, reverse, string, delimiter, no_header, lam, sort_by_row = readCL()
     jtutils.fix_broken_pipe()
     def proc_sort_list(sort_list, df):
         for index in sort_list:
@@ -56,7 +70,7 @@ if __name__ == "__main__":
     if no_header:
         args["header"]=None
     df = pd.read_csv(infile, delimiter=delimiter, encoding="utf-8", dtype="object", **args)
-    
-    df = sort_df(df, sort_list, string, reverse, sort_by_row)
+
+    df = sort_df(df, sort_list, string, reverse, lam, sort_by_row)
 
     df.to_csv(sys.stdout,index=False,encoding="utf-8")
