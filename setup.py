@@ -18,6 +18,7 @@ setup(
         "pcsv/pset",
         "pcsv/ptable",
         "pcsv/pindent",
+        "pcsv/pconcat",
         "pcsv/ptr",
         "pcsv/any2csv"
     ],
@@ -25,7 +26,8 @@ setup(
         "numpy",
         "pandas",
         "matplotlib",
-        "xlrd"
+        "xlrd",
+        "jtutils"
     ],
     keywords = [],
     classifiers = [],

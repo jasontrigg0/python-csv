@@ -262,8 +262,7 @@ def process(f_in, keep_list, drop_list, begin_code, grep_code, process_code, end
 
 if __name__ == "__main__":
     f_in, keep_list, drop_list, begin_code, grep_code, process_code, end_code, exceptions_allowed, no_header, delimiter, fix, autofix, load_set, no_print = readCL()
-    #following two lines solve 'Broken pipe' error when piping
-    #script output into head
+    #solve 'Broken pipe' error when piping script output into head
     fix_broken_pipe()
 
     if begin_code:
