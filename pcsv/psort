@@ -36,6 +36,7 @@ def sort_df(df, sort_list, string, reverse, lam, sort_by_row):
     if sort_by_row is not None:
         df = df.transpose() #transpose and then handle normally
 
+    sort_fn = None
     if lam:
         sort_fn = lam
     elif not string:
