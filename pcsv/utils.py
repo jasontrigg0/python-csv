@@ -220,7 +220,7 @@ def open_unix_sorted_csv(filename, keys):
         open_cmd = "7z e {filename} -so 2>/dev/null".format(**vars())
     else:
         open_cmd = "less {filename}".format(**vars())
-    print open_cmd
+    print(open_cmd)
     cmdlist = [open_cmd+"| (read -r h; echo $h; sort)"]
     for line in run_streaming(cmdlist):
         yield line
@@ -229,11 +229,11 @@ def open_unix_sorted_csv(filename, keys):
 def look(obj):
     import inspect
     if hasattr(obj, '__call__'):
-        print "Function arguments: "
-        print inspect.getargspec(obj)
-        print
-    print "dir: "
-    print dir(obj)
+        print("Function arguments: ")
+        print(inspect.getargspec(obj))
+        print()
+    print("dir: ")
+    print(dir(obj))
 
 def check_gradient(neg_llh, grad_neg_llh, initial_estimate, *args):
     from scipy.optimize import check_grad
@@ -242,12 +242,12 @@ def check_gradient(neg_llh, grad_neg_llh, initial_estimate, *args):
     gradient_mag = norm(grad_neg_llh(initial_estimate, *args))
     frac = error / gradient_mag
     if abs(frac) > 1e-7:
-        print "WARNING: ratio shouldn't be over 1e-7: "
+        print("WARNING: ratio shouldn't be over 1e-7: ")
     else:
-        print "INFO: ratio looks good: less than 1e-7"
-    print "error: ", error
-    print "gradient_mag: ", gradient_mag
-    print "ratio: ", error/gradient_mag
+        print("INFO: ratio looks good: less than 1e-7")
+    print("error: ", error)
+    print("gradient_mag: ", gradient_mag)
+    print("ratio: ", error/gradient_mag)
 
 def writerow(rout):
     csv.writer(sys.stdout, lineterminator= '\n').writerows([rout])
@@ -391,10 +391,10 @@ class IndexDict(OrderedDict):
 
 
 if __name__ == "__main__":
-    print group_by([1,2,1,3,2])
-    print group_by([{"a":1,"b":2},{"a":0,"b":1}],"a")
-    print group_by([[1,2],[1,3],[3,4]],1)
-    print aggregate([[1,2],[1,3],[3,4]],len,0)
+    print(group_by([1,2,1,3,2]))
+    print(group_by([{"a":1,"b":2},{"a":0,"b":1}],"a"))
+    print(group_by([[1,2],[1,3],[3,4]],1))
+    print(aggregate([[1,2],[1,3],[3,4]],len,0))
 
 
-    print list(pairwise([1,2,3,4]))
+    print(list(pairwise([1,2,3,4])))

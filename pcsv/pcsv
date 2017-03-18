@@ -6,6 +6,7 @@ import re
 from pcsv.pindent import pindent
 from jtutils import rand, is_int, str_is_float, str_is_int, utf8_string, md5hash, to_years, to_days, fix_broken_pipe, GroupBy
 from collections import Counter
+import six
 
 def readCL():
     parser = argparse.ArgumentParser()
@@ -63,10 +64,12 @@ def process_cut_list(l, delim=","):
             yield i
 
 def row2txt(row):
-    import io
-    output = io.BytesIO()
+    output = six.StringIO()
     wr = csv.writer(output)
-    wr.writerow([utf8_string(s) for s in row])
+    if sys.version_info[0] >= 3:
+        wr.writerow([s.encode() for s in row])
+    else:
+        wr.writerow([utf8_string(s) for s in row])
     return output.getvalue().strip()
 
 #dict_and_row function to return a tuple with both unprocessed row and csv.reader() output
@@ -156,7 +159,7 @@ def gen_outhdr(hdr, add_list, keep_list, drop_list):
         if not add_list:
             add_list = [x for x in keep_list if x not in hdr and not is_int(x)]
         #example tmp_dict = {0:"col1",1:"col2",2:"col3","col1":"col1","col2":"col2","col3":"col3"}
-        tmp_dict = dict(list(enumerate(outhdr)) + zip(outhdr,outhdr) + zip(add_list, add_list))
+        tmp_dict = dict(list(enumerate(outhdr)) + list(zip(outhdr,outhdr)) + list(zip(add_list, add_list)))
         outhdr = [tmp_dict[x] for x in keep_list] #first include already existing columns from -c argument
     if add_list:
         outhdr += [x for x in add_list  if x not in outhdr]

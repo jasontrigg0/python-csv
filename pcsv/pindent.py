@@ -4,6 +4,7 @@ import csv
 import sys
 import re
 import itertools
+from jtutils import threewise
 
 def readCL():
     usagestr = "%prog"
@@ -24,26 +25,10 @@ def _groupby(l,n):
 def pindent(string):
     return '\n'.join(_pindent_iter(string.split('\n')))
 
-def _threewise(iterable):
-    """s -> (None, s0, s1), (s0, s1, s2), ... (sn-1, sn, None)
-    example:
-    for (las, cur, nex) in threewise(l):
-    """
-    a, b, c = itertools.tee(iterable,3)
-    def prepend(val, l):
-        yield val
-        for i in l: yield i
-    def postpend(val, l):
-        for i in l: yield i
-        yield val
-    next(c,None)
-    for _xa, _xb, _xc in itertools.izip(prepend(None,a), b, postpend(None,c)):
-        yield (_xa, _xb, _xc)
-
 def _paste_lambdas(match_list):
     """don't want newline after 'lambda x:'
     """
-    for las, cur, nex  in _threewise(match_list):
+    for las, cur, nex  in threewise(match_list):
         #TODO: replace with regex of exactly the characters allowed in python variable names (instead of strictly alphanumeric)?
         regex = "lambda[ 0-9A-Za-z]*:$"
         if las and re.findall(regex,las):
@@ -55,13 +40,13 @@ def _paste_lambdas(match_list):
 
 def _split(s):
     """
-    read a string representing python code and 
+    read a string representing python code and
     'print "echo; echo;"'
     """
     out_list = []
     cur_substring = ""
     in_string_type = None
-    for las, cur, nex in _threewise(s):
+    for las, cur, nex in threewise(s):
         cur_substring += cur
         if not in_string_type:
             if cur == '"' or cur == "'":
@@ -82,7 +67,7 @@ def _split(s):
     if cur_substring:
         out_list.append(cur_substring.strip())
     return out_list
-                    
+
 
 def _pindent_iter(line_iter):
     indent_level = 0
@@ -110,13 +95,13 @@ def _pindent_iter(line_iter):
                 indent_level += 1
         # yield ("    "*indent_level + output_text)
 
-        
+
 #jtrigg@20151105 not currently being used
 # def write_line(*l):
 #     import csv
 #     rout = [str(i) for i in l]
 #     csv.writer(sys.stdout, lineterminator= '\n').writerows([rout])
-            
+
 
 if __name__ == "__main__":
     f_in, code, print_formatted = readCL()
@@ -129,4 +114,3 @@ if __name__ == "__main__":
         sys.stdout.write(pindent(code_string) + "\n")
     else:
         exec(pindent(code_string))
-    

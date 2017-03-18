@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-import StringIO
+import six
 import csv
 import sys
 import codecs
 import itertools
 
 def csv2pretty(s, max_field_size=None):
-    f_in = StringIO.StringIO(s)
+    f_in = six.StringIO(s)
     return "\n".join(get_all_lines(f_in, 100, False, ",", max_field_size))
 
 def width(string, max_field_size):
@@ -20,9 +20,10 @@ def width(string, max_field_size):
     #invalid unicode characters are usually printed like '<E6>'
     #ie they take up *four characters*
     #replace them with four spaces to calculate width correctly
-    codecs.register_error('four_space',lambda x: (u"    ",x.start+1)) 
+    codecs.register_error('four_space',lambda x: (u"    ",x.start+1))
     string = preprocess_field(string, max_field_size)
-    string = string.decode("utf8", "four_space")
+    if sys.version_info[0] < 3:
+        string = string.decode("utf8", "four_space")
 
 
     #some unicode characters are printed like <U+052A>
@@ -69,7 +70,7 @@ def pretty_print_field(full_width, field, max_field_size):
     field = preprocess_field(field, max_field_size)
     extra_spaces = full_width - width(field, max_field_size)
     return " " + field + " "*extra_spaces + " "
-    
+
 def pretty_print_row(col_full_widths, row, max_field_size):
     """
     pretty print a row such that each column is padded to have the widths in the col_full_widths vector
@@ -81,7 +82,7 @@ def pretty_print_row(col_full_widths, row, max_field_size):
         end = "|"
     return start + "|".join(pretty_print_field(full_width, field, max_field_size) for full_width, field in zip(col_full_widths, row)) + end
 
-    
+
 def compute_full_widths(hdr, cached_lines, max_field_size):
     """
     input a hdr and a list of rows and compute the maximum printed width of each column
@@ -93,7 +94,11 @@ def compute_full_widths(hdr, cached_lines, max_field_size):
         if not full_widths:
             full_widths = l_widths
         else:
-            full_widths = [max(x1,x2) for x1,x2 in itertools.izip_longest(full_widths, l_widths)]
+            if sys.version_info[0] >= 3:
+                zip_fn = itertools.zip_longest
+            else:
+                zip_fn = itertools.izip_longest
+            full_widths = [max(x1,x2) for x1,x2 in zip_fn(full_widths, l_widths)]
     return full_widths
 
 
@@ -102,9 +107,13 @@ def update_full_widths(full_widths, r, max_field_size):
     input a list of maximum column widths and update that list given a new row
     """
     l_widths = [width(f, max_field_size) for f in r]
-    full_widths_new = [max(x1,x2) for x1,x2 in itertools.izip_longest(full_widths, l_widths)]
+    if sys.version_info[0] >= 3:
+        zip_fn = itertools.zip_longest
+    else:
+        zip_fn = itertools.izip_longest
+    full_widths_new = [max(x1,x2) for x1,x2 in zip_fn(full_widths, l_widths)]
     return full_widths_new
-    
+
 
 def print_cache(full_widths, hdr, cached_lines, max_field_size):
     if hdr:
@@ -114,7 +123,7 @@ def print_cache(full_widths, hdr, cached_lines, max_field_size):
     for r in cached_lines:
         yield pretty_print_row(full_widths, r, max_field_size)
 
-        
+
 
 def get_all_lines(f_in, cache_freq, no_header, delimiter, max_field_size):
     """
@@ -149,7 +158,7 @@ def get_all_lines(f_in, cache_freq, no_header, delimiter, max_field_size):
             #print current row
             yield (pretty_print_row(full_widths,r,max_field_size))
 
-        
+
     #if we never printed the cache above
     if not full_widths:
         full_widths = compute_full_widths(hdr, cached_lines, max_field_size)
