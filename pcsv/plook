@@ -19,9 +19,15 @@ def readCL():
     parser.add_argument("-a","--full_fields",action="store_true",help="don't truncate fields")
     args = parser.parse_args()
     if args.infile == sys.stdin:
-        f_in = sys.stdin
+        if sys.version_info[0] >= 3:
+            f_in = codecs.getreader('utf8')(sys.stdin.detach(), errors='ignore')
+        else:
+            f_in = sys.stdin
     else:
-        f_in = open(args.infile)
+        if sys.version_info[0] >= 3:
+            f_in = open(args.infile, errors='ignore')
+        else:
+            f_in = open(args.infile)
     if args.full_fields:
         args.max_field_size = None
     return f_in, args.cache_freq, args.no_header, args.delimiter, args.max_field_size
