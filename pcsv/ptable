@@ -44,11 +44,11 @@ def two_col(col1,col2):
     v1 = str(len(vals1.difference(vals2)))
     v2 = str(len(vals1.intersection(vals2)))
     v3 = str(len(vals2.difference(vals1)))
-    print "venn diagram breakdown"
-    print "|a-b|: " + v1
-    print "|a^b|: " + v2
-    print "|b-a|: " + v3
-    print "----"
+    print("venn diagram breakdown")
+    print("|a-b|: " + v1)
+    print("|a^b|: " + v2)
+    print("|b-a|: " + v3)
+    print("----")
     if all(col1.apply(str_is_float)) and \
        all(col2.apply(str_is_float)):
         col1_float = col1.astype(float)
@@ -56,39 +56,39 @@ def two_col(col1,col2):
         sd1 = col1_float.std()
         sd2 = col2_float.std()
         corr = (col1_float).corr(col2_float)
-        print "Statistics:"
-        print "sd1: {:f}".format(sd1)
-        print "sd2: {:f}".format(sd2)
-        print "R: {:f}".format(corr)
-        print "----"
+        print("Statistics:")
+        print("sd1: {:f}".format(sd1))
+        print("sd2: {:f}".format(sd2))
+        print("R: {:f}".format(corr))
+        print("----")
         reg_coeff1 = corr * sd2 / float(sd1)
         reg_coeff2 = corr * sd1 / float(sd2)
         mean1 = col1_float.mean()
         mean2 = col2_float.mean()
         intercept1 = mean2 - reg_coeff1 * mean1
         intercept2 = mean1 - reg_coeff2 * mean2
-        print "Linear regression:"
-        print "b = {}a + {}".format(reg_coeff1, intercept1)
-        print "a = {}b + {}".format(reg_coeff2, intercept2)
-        print "---"
+        print("Linear regression:")
+        print("b = {}a + {}".format(reg_coeff1, intercept1))
+        print("a = {}b + {}".format(reg_coeff2, intercept2))
+        print("---")
     if len(vals1) < 15 and len(vals2) < 15:
-        print pd.crosstab(col1,col2)
+        print(pd.crosstab(col1,col2))
 
 
 
 if __name__ == "__main__":
-    f_in, col1, col2, no_header, delimiter = readCL()
+    infile, col1, col2, no_header, delimiter = readCL()
     jtutils.fix_broken_pipe()
     if not no_header:
-        dat = pd.read_csv(f_in, dtype="object", delimiter=delimiter)
+        dat = jtutils.pd_read_csv(infile, dtype="object", delimiter=delimiter)
         hdr = ",".join(dat.columns)
         sys.stderr.write("WARNING: ptable using first line of input, \"{hdr}\", as header. If file doesn't have a header use -n option.".format(**vars()) + "\n")
     else:
-        dat = pd.read_csv(f_in, dtype="object", header=None, delimiter=delimiter)
+        dat = jtutils.pd_read_csv(infile, dtype="object", header=None, delimiter=delimiter)
     # if len(dat.columns) == 2:
     #     for c in dat.columns:
-    #         print dat[c].unique()
-    # print (dat.iloc[:,0].unique()).difference(set(dat.iloc[:,1]))
+    #         print(dat[c].unique())
+    # print((dat.iloc[:,0].unique()).difference(set(dat.iloc[:,1])))
     if len(dat.columns) == 1:
         one_col(dat.iloc[:,0])
     elif col1 and not col2:
@@ -99,4 +99,20 @@ if __name__ == "__main__":
     elif col1 and col2:
         two_col(dat[col1], dat[col2])
     else:
-        raise
+        #print out a correlation table for the numeric variables
+        dat = dat.apply(pd.to_numeric, errors='coerce')
+        def numeric_col(c):
+            return (c.isnull().sum() / float(len(c)) > 0.1 )
+        non_numerics = [col for col,val in zip(dat.columns, dat.apply(numeric_col)) if val]
+
+        # print(list(zip(dat.columns, dat.apply(lambda x: x.isnull().all()))))
+        # print(non_numerics)
+        dat = dat.drop(non_numerics, axis = 1)
+
+        THRESHOLD = 0.3
+
+        dat = dat.corr()
+
+        dat = dat.applymap(lambda x: x if abs(x) > THRESHOLD else "")
+
+        dat.to_csv(sys.stdout)
