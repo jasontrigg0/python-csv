@@ -186,7 +186,7 @@ def ls_dist_curve_fit(pts, fn, cnt=25):
     from jtutils import pairwise
     n, bins, patches = plt.hist(pts, cnt, normed=1, histtype='stepfilled', rwidth=0.8)
     bin_mids = [(b1 + b2) / 2.0 for b1,b2 in pairwise(bins) if b2]
-    print len(bins)
+    print(len(bins))
     xy_pts = zip(bin_mids,n)
     curve_fit(xy_pts,fn,plot_points=False)
 
@@ -210,14 +210,14 @@ def mle_dist_curve_fit(pts, fn, cnt=25):
         fn = fn_dict[fn]
 
     param = fn.fit(pts) # distribution fitting
-    print "Parameters: ",param
+    print("Parameters: ",param)
     xmin = min(pts)
     xmax = max(pts)
     x = numpy.linspace(xmin,xmax,100)
     # fitted distribution
     pdf_fitted = fn.pdf(x,*param)
     nll = fn.nnlf(param,x)
-    print "Negative log likelihood: ", nll
+    print("Negative log likelihood: ", nll)
     # original distribution
     # pdf = scipy.stats.norm.pdf(x)
 
@@ -256,8 +256,8 @@ def mle_fit_pareto_curve(pts):
         # scale + loc <= min(x)
         # loc = min_x - scale
         loc = min_x - scale
-        # print b,loc,scale
-        # print [scipy.stats.pareto.logpdf(x,b,loc,scale) for x in pts]
+        # print(b,loc,scale)
+        # print([scipy.stats.pareto.logpdf(x,b,loc,scale) for x in pts])
         llh = sum([scipy.stats.pareto.logpdf(x,b,loc,scale) for x in pts])
         return -1 * llh
     def grad(params, *args):
@@ -268,10 +268,10 @@ def mle_fit_pareto_curve(pts):
         return numpy.array([grad_b, grad_scale])
 
     min_x = min(pts)
-    print "Fitting pareto..."
+    print("Fitting pareto...")
     res = scipy.optimize.minimize(neg_llh, [1.0,1.0], jac=grad, args=(min_x,pts), method='L-BFGS-B', bounds=[(0.01,None),(0.01,None)], options={"disp":True})
     # res = scipy.optimize.minimize(neg_llh, [1.0,1.0], jac=grad, args=(min_x,pts), method='nelder-mead', bounds=[(0.01,None),(0.01,None)], options={"disp":True})
-    print res
+    print(res)
     return res
 
 
@@ -346,12 +346,12 @@ if __name__ == "__main__":
     # else:
     #     dat = pd.read_csv(infile, dtype=str)
 
-    # print "imported"
+    # print("imported")
 
     with open(infile) as f_in:
         if not no_header:
             try:
-                hdr = f_in.next().strip()
+                hdr = f_in.readline().strip()
             except StopIteration:
                 sys.stderr.write("ERROR: input has no rows. Exiting..." + "\n")
                 sys.exit(-1)
@@ -390,7 +390,7 @@ if __name__ == "__main__":
         l3 = len(df)
         if l2 - l3 != 0:
             sys.stderr.write("WARNING: dropped {} outliers".format(l2-l3) + "\n")
-        print mins, maxs
+        print(mins, maxs)
 
 
     if do_line_plot:

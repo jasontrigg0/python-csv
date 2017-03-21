@@ -4,13 +4,13 @@ import argparse
 import csv
 import re
 from pcsv.pindent import pindent
-from jtutils import rand, is_int, str_is_float, str_is_int, utf8_string, md5hash, to_years, to_days, fix_broken_pipe, GroupBy
+from jtutils import rand, is_int, str_is_float, str_is_int, utf8_string, md5hash, to_years, to_days, fix_broken_pipe, GroupBy, open_py2_py3
 from collections import Counter
 import six
 
 def readCL():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-f","--infile")
+    parser.add_argument("-f","--infile", default=sys.stdin)
     parser.add_argument("-c","--keep_list",help="csv of column names or indices. Can include currently non-existent columns")
     parser.add_argument("-C","--drop_list",help="csv of column names or indices")
     parser.add_argument("-b","--begin_code",nargs="*")
@@ -30,10 +30,7 @@ def readCL():
     if sys.stdin.isatty() and not args.infile:
         sys.stderr.write("WARNING: pcsv using /dev/stdin as default input file (-f) but nothing seems to be piped in..." + "\n")
 
-    if not args.infile:
-        f_in = sys.stdin
-    else:
-        f_in = open(args.infile)
+    f_in = open_py2_py3(args.infile)
 
     keep_list = process_cut_csv(args.keep_list)
     drop_list = process_cut_csv(args.drop_list)
