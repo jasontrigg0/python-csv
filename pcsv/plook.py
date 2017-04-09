@@ -98,7 +98,7 @@ def compute_full_widths(hdr, cached_lines, max_field_size):
                 zip_fn = itertools.zip_longest
             else:
                 zip_fn = itertools.izip_longest
-            full_widths = [max(x1,x2) for x1,x2 in zip_fn(full_widths, l_widths)]
+            full_widths = [max([x for x in [x1,x2] if x is not None]) for x1,x2 in zip_fn(full_widths, l_widths)]
     return full_widths
 
 
