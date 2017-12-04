@@ -116,7 +116,7 @@ class IndexDict():
                 return default
             else:
                 raise
-    def __str__(self):
+    def __repr__(self):
         return dict((k,self._values[v]) for k,v in self._keyhash.items() if v < len(self._values[v])).__str__()
     def __len__(self):
         return len(self._values)
