@@ -27,6 +27,8 @@ setup(
         "pandas",
         "matplotlib",
         "xlrd",
+        "xmltodict",
+        "demjson",
         "jtutils"
     ],
     keywords = [],

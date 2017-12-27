@@ -4,7 +4,10 @@ import csv
 import sys
 import xml
 import jtutils
-import pcsv.plook
+from . import plook
+import six
+import json
+import ast
 ###
 def any2csv(txt, xls_sheet=None, xls_sheet_names=None, path=[], summary=False, to_stdout=False):
     try:
@@ -14,7 +17,7 @@ def any2csv(txt, xls_sheet=None, xls_sheet_names=None, path=[], summary=False, t
 
     try:
         json2csv(txt, path, summary, to_stdout)
-    except ValueError:
+    except SyntaxError:
         pass
 
     try:
@@ -49,27 +52,37 @@ def rows2csv(rows):
     """http://stackoverflow.com/a/9157370"""
     import io
     import csv
-    output = io.BytesIO()
-    wr = csv.writer(output)
     for r in rows:
-        wr.writerow([to_unicode(s) for s in r])
+        if sys.version_info[0] == 2:
+            #python2 version of csv doesn't support unicode input
+            #so use BytesIO instead
+            #https://stackoverflow.com/a/13120279
+            output = io.BytesIO()
+            wr = csv.writer(output)
+            wr.writerow([unicode(s) for s in r])
+        elif sys.version_info[0] == 3:
+            output = io.StringIO()
+            wr = csv.writer(output)
+            wr.writerow(r)
     return output.getvalue().strip()
 
-def to_unicode(s):
-    """ """
-    if isinstance(s, str):
-        s = s.decode("utf-8","ignore")
-    return s.encode("utf-8")
+# def to_unicode(s):
+#     """ """
+#     if isinstance(s, str):
+#         s = s.decode("utf-8","ignore")
+#     return s.encode("utf-8")
 
 def row2csv(row):
     return rows2csv([row])
 
-def csv2rows(csv_string):
-    import StringIO
-    f = StringIO.StringIO(csv_string)
-    reader = csv.reader(f)
+def csv2rows(csv_string, delimiter=","):
+    if sys.version_info[0] < 3:
+        from StringIO import StringIO
+    else:
+        from io import StringIO
+    f = StringIO(csv_string)
+    reader = csv.reader(f,delimiter=delimiter)
     return [row for row in reader]
-
 
 def csv2df(csv_string):
     """http://stackoverflow.com/a/22605281"""
@@ -79,7 +92,7 @@ def csv2df(csv_string):
     else:
         from io import StringIO
     import pandas as pd
-    return pd.DataFrame.from_csv(StringIO(csv_string),index_col=False)
+    return pd.read_csv(StringIO(csv_string),index_col=False)
 
 def dict2csv(d):
     import pandas as pd
@@ -100,7 +113,7 @@ def df2csv(df):
     return df.to_csv(None,index=False)
 
 def csv2pretty(txt, max_field_size=None):
-    return pcsv.plook.csv2pretty(txt, max_field_size=max_field_size)
+    return plook.csv2pretty(txt, max_field_size=max_field_size)
 
 
 
@@ -110,7 +123,7 @@ def print_csv(rows):
     wr = csv.writer(sys.stdout, lineterminator="\n")
     if not rows: return
     for r in rows:
-        wr.writerow([s.encode("utf-8") for s in r])
+        wr.writerow([s for s in r]) #.encode("utf-8") for s in r])
 
 
 def process_rows(rows, to_stdout):
@@ -132,7 +145,10 @@ def parse_cell(cell, datemode):
     elif cell.ctype == xlrd.XL_CELL_ERROR:
         return "--PARSING-ERROR--"
     else:
-        return cell.value.encode("utf-8")
+        if sys.version_info[0] >= 3:
+            return cell.value
+        else:
+            return cell.value.encode("utf-8")
 
 def get_cell(sh,i,j):
     try:
@@ -161,15 +177,31 @@ def read_xls(txt, sheet, print_sheet_names):
         raise Exception("-s argument not in xls list of sheets ({})".format(str(sheet_names)))
 
     wr = csv.writer(sys.stdout, lineterminator="\n")
-    for i in xrange(sh.nrows):
-        r = [parse_cell(get_cell(sh,i,j), wb.datemode) for j in xrange(sh.ncols)]
+    for i in range(sh.nrows):
+        r = [parse_cell(get_cell(sh,i,j), wb.datemode) for j in range(sh.ncols)]
         wr.writerow(r)
 
-
 def parse_json(txt):
-    import json
-    dict_list_obj = json.loads(txt)
-    return dict_list_obj
+    try:
+        dict_list_obj = json.loads(txt)
+        return dict_list_obj
+    except ValueError:
+        pass
+
+    try:
+        #try ast if json module doesn't work (eg if there are single quotes instead of double quotes)
+        #eg: https://stackoverflow.com/a/34855065
+        dict_list_obj = ast.literal_eval(txt)
+        return dict_list_obj
+    except (SyntaxError,ValueError):
+        pass
+
+    try:
+        import demjson
+        dict_list_obj = demjson.decode(txt)
+        return dict_list_obj
+    except:
+        raise
 
 def parse_xml(txt):
     import xmltodict
@@ -185,7 +217,7 @@ def field_summary(dict_list_obj):
         if isinstance(val, list) and len(val) > 0:
             stack.append(("["+str(len(val))+"]",val[0],depth+1))
         elif isinstance(val, dict):
-            for a,b in val.items()[::-1]:
+            for a,b in list(val.items())[::-1]:
                 stack.append((a,b,depth+1))
 
 
@@ -199,19 +231,44 @@ def process_dict_list_obj(dict_list_obj, path):
     end_node = follow_path(dict_list_obj, path)
     if isinstance(end_node, list):
         cols = set()
-        for i in end_node:
-            if isinstance(i, list):
-                raise Exception("can't convert nested lists to csv -- try using a deeper path")
-            cols = cols.union(i.viewkeys())
-        cols = list(cols)
+        for n in end_node:
+            if isinstance(n, dict):
+                cols = cols.union(six.viewkeys(n))
+            elif isinstance(n, (list,tuple)):
+                #write a csv from a list of lists
+                #by using a dummy header (eg 0,1,2,...)
+                #@example:
+                #[["a","b"],["c","d"],["e","f"]] ->
+                #0,1
+                #a,b
+                #c,d
+                #e,f
+                cols = cols.union(range(len(n)))
+            else:
+                raise Exception("Can't convert simple list to csv.")
+            # else isinstance(n, list):
+            #     raise Exception("can't convert nested lists to csv -- try using a deeper path")
+        cols = sorted(list(cols))
         yield cols
-        for i in end_node:
-            r = [unicode(i.get(c,"")) for c in cols]
-            yield r
+        for n in end_node:
+            if isinstance(n, dict):
+                r = [n.get(c,"") for c in cols]
+                #don't use dumps on a string or it'll create an extra pair of quotes
+                r = [json.dumps(x,ensure_ascii = False) if isinstance(x,(tuple,list,dict)) else x for x in r]
+                yield r
+            elif isinstance(n,(list,tuple)):
+                r = [n[c] if (jtutils.is_int(c) and c < len(n)) else "" for c in cols]
+                #don't use dumps on a string or it'll create an extra pair of quotes
+                r = [json.dumps(x,ensure_ascii = False) if isinstance(x,(tuple,list,dict)) else x for x in r]
+                yield r
+            else:
+                raise Exception("Not a dict, list or tuple!")
     elif isinstance(end_node, dict):
-        cols = list(end_node.viewkeys())
+        cols = list(six.viewkeys(end_node))
         yield cols
-        r = [unicode(end_node.get(c,"")) for c in cols]
+        r = [end_node.get(c,"") for c in cols]
+        #don't use dumps on a string or it'll create an extra pair of quotes
+        r = [json.dumps(x,ensure_ascii = False) if isinstance(x,(list,dict)) else x for x in r]
         yield r
     else:
         raise_path_error()
@@ -253,7 +310,7 @@ def follow_path(dict_list_obj, path):
             return follow_path(dict_list_obj[key],path[1:])
         elif jtutils.str_is_int(path[0]):
             index = int(path[0])
-            return follow_path(dict_list_obj.values()[index],path[1:])
+            return follow_path(list(dict_list_obj.values())[index],path[1:])
         else:
             raise Exception("Invalid path")
     else:

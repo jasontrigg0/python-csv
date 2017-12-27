@@ -23,8 +23,12 @@ if __name__ == "__main__":
     infile, xls_sheet, path, summary = readCL()
     jtutils.fix_broken_pipe()
 
-    if infile is None: infile = sys.stdin
-    with io.open(infile, encoding="utf-8") if infile != sys.stdin else sys.stdin as fin:
+    standard_in = sys.stdin.buffer if sys.version_info[0] == 3 else sys.stdin
+
+    if infile is None:
+        infile = standard_in
+
+    with io.open(infile, encoding="utf-8", mode='b') if infile != standard_in else standard_in as fin:
         txt = fin.read()
         if not txt:
             sys.stderr.write("ERROR: empty input found. Exiting..." + "\n")
