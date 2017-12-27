@@ -112,7 +112,6 @@ def line_plot(pts, outfile=None):
     N = len(pts[0])
     assert(N > 1)
     x = [l[0] for l in pts]
-    print(pts)
     for i in range(1,N):
         y = [l[i] for l in pts]
         plt.plot(x, y, color=discrete_cmap(N, 'rainbow')(i/float(N)), ls="-")
@@ -375,7 +374,7 @@ if __name__ == "__main__":
     if dropped != 0:
         sys.stderr.write("WARNING: dropped {} non float values".format(l1-l2) + '\n')
 
-    if not keep_outliers:
+    if not keep_outliers and not line_plot:
         import numpy as np
         transpose = zip(*df)
 
@@ -390,7 +389,7 @@ if __name__ == "__main__":
         l3 = len(df)
         if l2 - l3 != 0:
             sys.stderr.write("WARNING: dropped {} outliers".format(l2-l3) + "\n")
-        print(mins, maxs)
+            print(mins, maxs)
 
 
     if do_line_plot:
