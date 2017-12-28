@@ -8,6 +8,7 @@ from . import plook
 import six
 import json
 import ast
+import demjson
 ###
 def any2csv(txt, xls_sheet=None, xls_sheet_names=None, path=[], summary=False, to_stdout=False):
     try:
@@ -17,7 +18,7 @@ def any2csv(txt, xls_sheet=None, xls_sheet_names=None, path=[], summary=False, t
 
     try:
         json2csv(txt, path, summary, to_stdout)
-    except SyntaxError:
+    except (SyntaxError, demjson.JSONDecodeError):
         pass
 
     try:
@@ -25,7 +26,12 @@ def any2csv(txt, xls_sheet=None, xls_sheet_names=None, path=[], summary=False, t
     except xml.parsers.expat.ExpatError:
         pass
 
-    raise Exception("ERROR: File doesn't match xls, json or xml format!" + "\n")
+    try:
+        python2csv(txt, path, summary, to_stdout)
+    except NameError:
+        pass
+
+    raise Exception("ERROR: File doesn't match xls, json, xml or python format!" + "\n")
 
 
 def xls2csv(txt, xls_sheet, summary, to_stdout=False):
@@ -48,19 +54,27 @@ def xml2csv(txt, path, summary=False, to_stdout=False):
     rows = [r for r in process_dict_list_obj(dict_list_obj, path)]
     return process_rows(rows, to_stdout)
 
+def python2csv(txt, path, summary=False, to_stdout=False):
+    dict_list_obj = eval(txt)
+    if summary:
+        field_summary(dict_list_obj)
+        sys.exit()
+    rows = [r for r in process_dict_list_obj(dict_list_obj, path)]
+    return process_rows(rows, to_stdout)
+
 def rows2csv(rows):
     """http://stackoverflow.com/a/9157370"""
     import io
     import csv
     for r in rows:
-        if sys.version_info[0] == 2:
+        if sys.version_info[0] <= 2:
             #python2 version of csv doesn't support unicode input
             #so use BytesIO instead
             #https://stackoverflow.com/a/13120279
             output = io.BytesIO()
             wr = csv.writer(output)
             wr.writerow([unicode(s) for s in r])
-        elif sys.version_info[0] == 3:
+        else:
             output = io.StringIO()
             wr = csv.writer(output)
             wr.writerow(r)
@@ -197,7 +211,6 @@ def parse_json(txt):
         pass
 
     try:
-        import demjson
         dict_list_obj = demjson.decode(txt)
         return dict_list_obj
     except:
