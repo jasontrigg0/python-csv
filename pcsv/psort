@@ -3,7 +3,7 @@ import argparse
 import pcsv.pindent
 import pandas as pd
 import sys
-from jtutils import fix_broken_pipe, str_is_int, is_int, str_is_float
+from jtutils import fix_broken_pipe, str_is_int, is_int, is_float, str_is_float
 
 def readCL():
     parser = argparse.ArgumentParser()
@@ -49,18 +49,29 @@ def sort_df(df, sort_list, string, reverse, lam, sort_by_row):
                 try:
                     x = float(x)
                 except:
-                    raise Exception("Couldn't cast "+repr(x)+" to float. Try --force option to override")
+                    raise Exception("Couldn't cast "+repr(x)+" to float. Use -s to string sort or --force option to ignore non-float values.")
                 return x
             sort_fn = fn
+
+    if string: #sort by string
+        ascending = (not reverse)
+    elif not lam: #sort by float
+        ascending = reverse
+    else: #custom sort function
+        vals = (df[sort_list[0]].values[:5])
+        if all(is_float(sort_fn(v)) for v in vals): #function returns float values
+            ascending = reverse
+        else:
+            ascending = (not reverse)
 
     if sort_fn:
         tmp_df = pd.DataFrame()
         for s in sort_list:
             tmp_df[s] = df[s].apply(sort_fn)
-        tmp_df = tmp_df.sort_values(by=sort_list, ascending=(reverse))
+        tmp_df = tmp_df.sort_values(by=sort_list, ascending=ascending)
         df = df.reindex(tmp_df.index)
     else:
-        df = df.sort_values(by=sort_list, ascending=(not reverse))
+        df = df.sort_values(by=sort_list, ascending=ascending)
 
     if sort_by_row is not None:
         df = df.transpose() #undo the transpose above
