@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 import argparse
 import pandas as pd
+import numpy as np
 import sys
+import collections
+from leven import levenshtein
+import sklearn.cluster
+
 import jtutils
 
 def readCL():
@@ -10,6 +15,9 @@ def readCL():
     parser.add_argument("-f","--infile", default=sys.stdin)
     parser.add_argument("-n","--no_header",action="store_true")
     parser.add_argument("-d","--delimiter",default=",")
+    parser.add_argument("-c","--cluster",action="store_true")
+    parser.add_argument("--cluster_thresh",help="threshold to cluster strings", default=0.5, type=float)
+    parser.add_argument('--cluster_match', nargs="*", help="""Force pairs of strings to cluster together. For example: --cluster_match "Scott Adams","Dilbert Blog" """)
     parser.add_argument("--correlation_threshold",default=0.3, type=float, help="When viewing correlation matrix of multiple columns, only display correlations of a minimum absolute value")
     args = parser.parse_args()
 
@@ -24,7 +32,7 @@ def readCL():
         col2 = args.col[1]
 
 
-    return args.infile, col1, col2, args.no_header, args.delimiter, args.correlation_threshold
+    return args.infile, col1, col2, args.no_header, args.delimiter, args.correlation_threshold, args.cluster, args.cluster_thresh, args.cluster_match
 
 
 def str_is_float(var):
@@ -76,21 +84,97 @@ def two_col(col1,col2):
         print(pd.crosstab(col1,col2))
 
 
+def basic_cluster(words):
+    #Starting from here:
+    #http://stats.stackexchange.com/a/158090
+    words = np.asarray(words) #So that indexing with a list will work
+    lev_similarity = -1*np.array([[levenshtein(w1,w2) for w1 in words] for w2 in words])
+
+    affprop = sklearn.cluster.AffinityPropagation(affinity="precomputed", damping=0.5)
+    affprop.fit(lev_similarity)
+    for cluster_id in np.unique(affprop.labels_):
+        exemplar = words[affprop.cluster_centers_indices_[cluster_id]]
+        cluster = np.unique(words[np.nonzero(affprop.labels_==cluster_id)])
+        cluster_str = ", ".join(cluster)
+        print(" - *%s:* %s" % (exemplar, cluster_str))
+
+def score_cluster(cluster, val, similarity_fn):
+    scores = [similarity_fn(val,s) for s in cluster[:3]] #only consider first 3 elements for speed
+    # print("debug")
+    # print(cluster)
+    # print(val)
+    # print(scores)
+    if not scores:
+        return
+    else:
+        return sum(scores) / float(len(scores))
+
+def quick_cluster(strings, similarity_fn, threshold=0.5):
+    #fast + (very) low-quality clustering algorithm with the following features
+    #1) runs in < n**2 time
+    #2) uses a similarity function (instead of a column of features)
+    #use case is classifying a list of strings to gather misspellings and other similar words together
+    clusters = []
+    for s in strings:
+        cluster_scores = [score_cluster(c, s, similarity_fn) for c in clusters]
+        if not cluster_scores or max(cluster_scores) < threshold:
+            clusters.append([s])
+        else:
+            idx = jtutils.argmax(cluster_scores)
+            clusters[idx].append(s)
+        if len(clusters) * len(strings) > 1000000:
+            #threshold too high -- decrease it:
+            print("Threshold too high -> will take too long to compute. Reducing threshold: " + str(threshold - 0.01))
+            return quick_cluster(strings, similarity_fn, threshold - 0.01)
+    return clusters
+
+def post_process_clusters(clusters, similarity_fn, force_matches):
+    # force_matches = [["fefe.de", "blog.fefe.de"],
+    #                  ["daviddfriedman.blogspot.com", "david friedman"],
+    #                  ["Scott Adams", "Dilbert Blog"],
+    #                  ["Shtetl Optimized","scottaaronson.com"]
+    # ]
+    if force_matches:
+        for match1, match2 in [f.split(",") for f in force_matches]:
+            best_cluster1 = jtutils.argmax(score_cluster(c, match1, similarity_fn) if c else 0 for c in clusters)
+            best_cluster2 = jtutils.argmax(score_cluster(c, match2, similarity_fn) if c else 0 for c in clusters)
+            clusters[best_cluster1] = clusters[best_cluster1] + clusters[best_cluster2]
+            clusters[best_cluster2] = None
+    return [c for c in clusters if c]
+
+def simple_similarity_fn(str1, str2):
+    #1 for identical strings
+    #0 for completely different strings
+    edit_distance = levenshtein(str1.lower(), str2.lower())
+    similarity = 1 - (edit_distance / max(float(len(str1)), float(len(str2))))
+    return max(similarity,0)
+
+def cluster_column(col1, threshold, force_matches):
+    words = [str(w) for w in col1.values if str(w).strip()]
+    clusters = quick_cluster(words, simple_similarity_fn,threshold)
+    clusters = post_process_clusters(clusters, simple_similarity_fn, force_matches)
+    for c in sorted(clusters, key=lambda x: len(x), reverse=True):
+        print(collections.Counter(c))
+
 
 if __name__ == "__main__":
-    infile, col1, col2, no_header, delimiter, correlation_threshold = readCL()
+    infile, col1, col2, no_header, delimiter, correlation_threshold, cluster, cluster_thresh, cluster_match = readCL()
     jtutils.fix_broken_pipe()
     if not no_header:
         dat = jtutils.pd_read_csv(infile, dtype="object", delimiter=delimiter)
+        dat = dat.fillna('') #by default empty strings are replaced with NaN
         hdr = ",".join(dat.columns)
         sys.stderr.write("WARNING: ptable using first line of input, \"{hdr}\", as header. If file doesn't have a header use -n option.".format(**vars()) + "\n")
     else:
         dat = jtutils.pd_read_csv(infile, dtype="object", header=None, delimiter=delimiter)
+        dat = dat.fillna('') #be default empty strings are replaced with NaN
     # if len(dat.columns) == 2:
     #     for c in dat.columns:
     #         print(dat[c].unique())
     # print((dat.iloc[:,0].unique()).difference(set(dat.iloc[:,1])))
-    if len(dat.columns) == 1:
+    if len(dat.columns) == 1 and cluster:
+        cluster_column(dat.iloc[:,0], cluster_thresh, cluster_match)
+    elif len(dat.columns) == 1:
         one_col(dat.iloc[:,0])
     elif col1 and not col2:
         one_col(dat[col1])
