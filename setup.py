@@ -20,6 +20,7 @@ setup(
         "pcsv/pindent",
         "pcsv/pconcat",
         "pcsv/ptr",
+        "pcsv/pcat",
         "pcsv/any2csv"
     ],
     install_requires=[
