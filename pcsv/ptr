@@ -3,6 +3,8 @@ import argparse
 import csv
 import sys
 import itertools
+import six
+from six.moves import zip_longest
 
 def readCL():
     parser = argparse.ArgumentParser()
@@ -13,5 +15,5 @@ def readCL():
 if __name__ == "__main__":
     f_in = readCL()
     inlines = [line for line in csv.reader(f_in)]
-    outlines = itertools.izip_longest(*inlines)
+    outlines = six.moves.zip_longest(*inlines)
     csv.writer(sys.stdout).writerows(outlines)

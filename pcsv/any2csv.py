@@ -66,17 +66,19 @@ def rows2csv(rows):
     """http://stackoverflow.com/a/9157370"""
     import io
     import csv
+    if sys.version_info[0] <= 2:
+        #python2 version of csv doesn't support unicode input
+        #so use BytesIO instead
+        #https://stackoverflow.com/a/13120279
+        #TODO: does StringIO.StringIO work?
+        output = io.BytesIO()
+    else:
+        output = io.StringIO()
+    wr = csv.writer(output)
     for r in rows:
         if sys.version_info[0] <= 2:
-            #python2 version of csv doesn't support unicode input
-            #so use BytesIO instead
-            #https://stackoverflow.com/a/13120279
-            output = io.BytesIO()
-            wr = csv.writer(output)
             wr.writerow([unicode(s) for s in r])
         else:
-            output = io.StringIO()
-            wr = csv.writer(output)
             wr.writerow(r)
     return output.getvalue().strip()
 
@@ -90,23 +92,14 @@ def row2csv(row):
     return rows2csv([row])
 
 def csv2rows(csv_string, delimiter=","):
-    if sys.version_info[0] < 3:
-        from StringIO import StringIO
-    else:
-        from io import StringIO
-    f = StringIO(csv_string)
+    f = six.StringIO(csv_string)
     reader = csv.reader(f,delimiter=delimiter)
     return [row for row in reader]
 
 def csv2df(csv_string):
     """http://stackoverflow.com/a/22605281"""
-    import sys
-    if sys.version_info[0] < 3:
-        from StringIO import StringIO
-    else:
-        from io import StringIO
     import pandas as pd
-    return pd.read_csv(StringIO(csv_string),index_col=False)
+    return pd.read_csv(six.StringIO(csv_string),index_col=False)
 
 def dict2csv(d):
     import pandas as pd

@@ -4,6 +4,7 @@ import csv
 import sys
 import codecs
 import itertools
+from six.moves import zip_longest
 
 def csv2pretty(s, max_field_size=None):
     f_in = six.StringIO(s)
@@ -22,14 +23,14 @@ def width(string, max_field_size):
     #replace them with four spaces to calculate width correctly
     codecs.register_error('four_space',lambda x: (u"    ",x.start+1))
     string = preprocess_field(string, max_field_size)
-    if sys.version_info[0] < 3:
+    if sys.version_info[0] <= 2:
         string = string.decode("utf8", "four_space")
 
 
     #some unicode characters are printed like <U+052A>
     #ie they take up *eight characters*
     #replace them with eight spaces
-    bad_unicode = u'\u052a' + u'\u0377' + u'\u037f' + u'\ufeff'
+    bad_unicode = u'\u052a' + u'\u0377' + u'\u037f' + u'\ufeff' + u'\u200b'
     string = "".join([u" "*8 if (c in bad_unicode) else c for c in string])
 
 
@@ -94,11 +95,7 @@ def compute_full_widths(hdr, cached_lines, max_field_size):
         if not full_widths:
             full_widths = l_widths
         else:
-            if sys.version_info[0] >= 3:
-                zip_fn = itertools.zip_longest
-            else:
-                zip_fn = itertools.izip_longest
-            full_widths = [max([x for x in [x1,x2] if x is not None]) for x1,x2 in zip_fn(full_widths, l_widths)]
+            full_widths = [max([x for x in [x1,x2] if x is not None]) for x1,x2 in zip_longest(full_widths, l_widths)]
     return full_widths
 
 
@@ -107,11 +104,7 @@ def update_full_widths(full_widths, r, max_field_size):
     input a list of maximum column widths and update that list given a new row
     """
     l_widths = [width(f, max_field_size) for f in r]
-    if sys.version_info[0] >= 3:
-        zip_fn = itertools.zip_longest
-    else:
-        zip_fn = itertools.izip_longest
-    full_widths_new = [max([x for x in [x1,x2] if x is not None]) for x1,x2 in zip_fn(full_widths, l_widths)]
+    full_widths_new = [max([x for x in [x1,x2] if x is not None]) for x1,x2 in zip_longest(full_widths, l_widths)]
     return full_widths_new
 
 

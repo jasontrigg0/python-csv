@@ -4,6 +4,7 @@ import csv
 import sys
 import re
 import itertools
+from six.moves import zip_longest
 from jtutils import threewise
 
 def readCL():
@@ -20,7 +21,7 @@ def readCL():
     return f_in, options.code, options.print_formatted
 
 def _groupby(l,n):
-    return itertools.izip_longest(* ( (iter(l),) * n) )
+    return zip_longest(* ( (iter(l),) * n) )
 
 def pindent(string):
     return '\n'.join(_pindent_iter(string.split('\n')))

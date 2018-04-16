@@ -6,6 +6,7 @@ import sys
 import itertools
 import csv
 import resource
+from six.moves import zip_longest
 
 def readCL():
     parser = argparse.ArgumentParser()
@@ -62,7 +63,7 @@ def pairwise(iterable):
     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
     a, b = itertools.tee(iterable)
     next(b, None)
-    return itertools.izip_longest(a, b)
+    return itertools.zip_longest(a, b)
 
 
 def readcsv(f):
@@ -107,14 +108,14 @@ class CsvKeyReader():
         return out
     def at_breakpt(self):
         return self.topval != self.nextval
-    
+
 
 def check_memory_usage():
     #http://stackoverflow.com/questions/938733/total-memory-used-by-python-process
     #in bytes
     import resource
     return 1000*resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-                    
+
 
 class MergeCsvReader():
     def __init__(self, fin1, keys1, fin2, keys2, chunksize):
@@ -188,7 +189,7 @@ class MergeCsvReader():
                 return [self.f1.pop(), self.f2.pop()]
 
 
-            
+
 def check_dup(df, key_list):
     if not key_list: return
     for col in key_list:
@@ -231,7 +232,7 @@ def cat_dfs(partial_dfs):
         else:
             df.to_csv(sys.stdout, mode="a", index=False, header=None) #jtrigg@20151101: changing header=False to header=None. Not sure what header=False does, but header=None assumes there is no header line in the file
 
-            
+
 if __name__ == "__main__":
     filelist, keys, keys2, join_type, keep1, keep2, default, chunksize, presorted = readCL()
 
@@ -251,7 +252,7 @@ if __name__ == "__main__":
         sys.exit(-1)
 
 
-        
+
     if keys:
         names1 = None
         if keep1:

@@ -2,6 +2,7 @@
 import optparse
 import sys
 import itertools
+from six.moves import zip_longest
 
 def readCL():
     usagestr = "%prog"
@@ -23,7 +24,7 @@ if __name__ == "__main__":
     hdr = None
     with open(file1) as fin1:
         for l in fin1:
-            if not no_header and not hdr: 
+            if not no_header and not hdr:
                 hdr = l
                 continue
             l = l.strip()
@@ -32,7 +33,7 @@ if __name__ == "__main__":
     hdr = None
     with open(file2) as fin2:
         for l in fin2:
-            if not no_header and not hdr: 
+            if not no_header and not hdr:
                 hdr = l
                 continue
             l = l.strip()
@@ -41,7 +42,7 @@ if __name__ == "__main__":
         v1 = s1.difference(s2)
         v2 = s1.intersection(s2)
         v3 = s2.difference(s1)
-        csv_rows = itertools.izip_longest(v1,v2,v3,fillvalue="")
+        csv_rows = zip_longest(v1,v2,v3,fillvalue="")
         hdr = ','.join(["set1","intersection","set2"])
         s_out = [hdr] + [','.join([str(f) for f in r]) for r in csv_rows]
     elif union:
@@ -52,6 +53,6 @@ if __name__ == "__main__":
         s_out = s1.difference(s2)
     else:
         raise
-    
+
     for l in s_out:
         sys.stdout.write(l + '\n')
