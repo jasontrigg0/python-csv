@@ -5,7 +5,6 @@ import numpy as np
 import sys
 import collections
 from leven import levenshtein
-import sklearn.cluster
 
 import jtutils
 
@@ -83,20 +82,6 @@ def two_col(col1,col2):
     if len(vals1) < 15 and len(vals2) < 15:
         print(pd.crosstab(col1,col2))
 
-
-def basic_cluster(words):
-    #Starting from here:
-    #http://stats.stackexchange.com/a/158090
-    words = np.asarray(words) #So that indexing with a list will work
-    lev_similarity = -1*np.array([[levenshtein(w1,w2) for w1 in words] for w2 in words])
-
-    affprop = sklearn.cluster.AffinityPropagation(affinity="precomputed", damping=0.5)
-    affprop.fit(lev_similarity)
-    for cluster_id in np.unique(affprop.labels_):
-        exemplar = words[affprop.cluster_centers_indices_[cluster_id]]
-        cluster = np.unique(words[np.nonzero(affprop.labels_==cluster_id)])
-        cluster_str = ", ".join(cluster)
-        print(" - *%s:* %s" % (exemplar, cluster_str))
 
 def score_cluster(cluster, val, similarity_fn):
     scores = [similarity_fn(val,s) for s in cluster[:3]] #only consider first 3 elements for speed
