@@ -28,7 +28,7 @@ if __name__ == "__main__":
     if infile is None:
         infile = standard_in
 
-    with io.open(infile, encoding="utf-8", mode='b') if infile != standard_in else standard_in as fin:
+    with io.open(infile, mode='rb') if infile != standard_in else standard_in as fin:
         txt = fin.read()
         if not txt:
             sys.stderr.write("ERROR: empty input found. Exiting..." + "\n")
