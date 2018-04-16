@@ -147,9 +147,30 @@ def gen_outhdr(hdr, add_list, keep_list, drop_list):
         outhdr = [x for ix,x in enumerate(outhdr) if (ix not in drop_list and x not in drop_list)]
     return outhdr
 
+def print_header(in_hdr, r, keep_list, drop_list):
+    add_list = [k for k in r.keys() if k not in in_hdr] #add any keys from r that aren't in the in_hdr
+    out_hdr = gen_outhdr(in_hdr, add_list, keep_list, drop_list)
+    #set and print header
+    csv.writer(sys.stdout, lineterminator= '\n').writerows([out_hdr])
+    return out_hdr
+
 def _check_is_list(cfg, x):
     if not isinstance(cfg[x],list):
         raise Exception(str(x) + " must be a list")
+
+def rename_duplicate_header(hdr):
+    hdr_out = []
+    for h in hdr:
+        cnt = 1
+        if h not in hdr_out:
+            hdr_out.append(h)
+        else:
+            new_val = h + "." + str(cnt)
+            while new_val in hdr_out:
+                cnt += 1
+                new_val = h + "." + str(cnt)
+            hdr_out.append(new_val)
+    return hdr_out
 
 # @profile
 def pcsv(input_cfg=None):
@@ -203,9 +224,9 @@ def pcsv(input_cfg=None):
         begin_code = [compile(code,'','exec') for code in cfg["begin_code"]]
     if cfg["grep_code"]:
         grep_code = pindent(cfg["grep_code"])
-        grep_code = compile(grep_code,'','eval')
         #preprocess /.*/ syntax
         grep_code = gen_grep_code(grep_code)
+        grep_code = compile(grep_code,'','eval')
     if cfg["process_code"]:
         _check_is_list(cfg,"process_code")
         process_code = [pindent(code) for code in cfg["process_code"]]
@@ -222,28 +243,36 @@ def pcsv(input_cfg=None):
     if cfg["set"]:
         s = set(l.strip() for l in open(cfg["set"]))
 
+    #main iteration loop
     for i,(l,_csvlist) in enumerate(csv_row_and_raw(f_in, delimiter = cfg["delimiter"])):
         is_header_line = (i==0 and not cfg["no_header"])
-        if cfg["no_header"]:
+        if not in_hdr and cfg["no_header"]:
             #create a dummy header from the length of the line
             in_hdr = ["X"+str(j) for j,_ in enumerate(_csvlist)]
             hdrhash = dict((jx,j) for j,jx in enumerate(in_hdr))
             r = IndexDict(hdrhash,_csvlist) #IndexDict can be accessed by string or index (all keys must be strings)
+            if not cfg["no_print"] and not out_hdr:
+                out_hdr = print_header(in_hdr, r, keep_list, drop_list)
         elif not in_hdr:
+            #read in the header
             in_hdr = _csvlist[:]
             if len(in_hdr) != len(set(in_hdr)):
                 sys.stderr.write("WARNING: duplicated header columns. Using dummy header instead" + '\n')
                 #create a dummy header from the length of the line
-                in_hdr = ["X"+str(j) for j,_ in enumerate(_csvlist)]
+                in_hdr = rename_duplicate_header(_csvlist)
             hdrhash = dict((jx,j) for j,jx in enumerate(in_hdr))
             if not _csvlist:
                 _csvlist = [''] * len(in_hdr)
             r = IndexDict(hdrhash,_csvlist) #IndexDict can be accessed by string or index (all keys must be strings)
-            if cfg["no_print"]:
+            if cfg["no_print"]: #TODO: what's this block for?
                 for code in process_code:
                     exec(code)
-            continue
+
+            if not cfg["no_print"]:
+                out_hdr = print_header(in_hdr, r, keep_list, drop_list)
+            continue #_csvlist is the header, don't continue to process as row
         else:
+            #setup for regular rows
             if len(_csvlist) != len(in_hdr):
                 if cfg["fix"]:
                     sys.stdout.write(l + "\n")
@@ -259,7 +288,7 @@ def pcsv(input_cfg=None):
                 _csvlist = [''] * len(in_hdr)
             r = IndexDict(hdrhash,_csvlist) #IndexDict can be accessed by string or index (all keys must be strings)
 
-
+        #run process and grep code
         try:
             if grep_code and not is_header_line and not eval(grep_code):
                 continue
@@ -276,18 +305,10 @@ def pcsv(input_cfg=None):
                     has_exceptions = True
                 continue
 
-        if not out_hdr and not cfg["no_print"]:
-            add_list = [k for k in r.keys() if k not in in_hdr] #add any keys from r that aren't in the in_hdr
-            out_hdr = gen_outhdr(in_hdr, add_list, keep_list, drop_list)
-            #set and print header
-            csv.writer(sys.stdout, lineterminator= '\n').writerows([out_hdr])
-
-
+        #print line
         if cfg["fix"] or cfg["no_print"]:
             pass
         else:
-            #print regular line
-            # rout = [str(r.get(h,"")) for h in outhdr]
             rout = [str(r[h]) for h in out_hdr]
             write_line(rout)
     if end_code:
