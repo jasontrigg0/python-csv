@@ -251,8 +251,6 @@ def pcsv(input_cfg=None):
             in_hdr = ["X"+str(j) for j,_ in enumerate(_csvlist)]
             hdrhash = dict((jx,j) for j,jx in enumerate(in_hdr))
             r = IndexDict(hdrhash,_csvlist) #IndexDict can be accessed by string or index (all keys must be strings)
-            if not cfg["no_print"] and not out_hdr:
-                out_hdr = print_header(in_hdr, r, keep_list, drop_list)
         elif not in_hdr:
             #read in the header
             in_hdr = _csvlist[:]
@@ -267,9 +265,6 @@ def pcsv(input_cfg=None):
             if cfg["no_print"]: #TODO: what's this block for?
                 for code in process_code:
                     exec(code)
-
-            if not cfg["no_print"]:
-                out_hdr = print_header(in_hdr, r, keep_list, drop_list)
             continue #_csvlist is the header, don't continue to process as row
         else:
             #setup for regular rows
@@ -305,12 +300,24 @@ def pcsv(input_cfg=None):
                     has_exceptions = True
                 continue
 
+        #print header after processing the first row
+        #(this allows auto adding of new columns)
+        #like new in this case -p 'r["new"] = 2 * float(r["old"])'
+        if not cfg["no_print"] and not out_hdr:
+            out_hdr = print_header(in_hdr, r, keep_list, drop_list)
+
         #print line
         if cfg["fix"] or cfg["no_print"]:
             pass
         else:
             rout = [str(r[h]) for h in out_hdr]
             write_line(rout)
+
+    #print header if not printed yet
+    #eg file has only a header and no rows
+    if not cfg["no_print"] and not out_hdr:
+        out_hdr = print_header(in_hdr, r, keep_list, drop_list)
+
     if end_code:
         for code in end_code:
             exec(code)
