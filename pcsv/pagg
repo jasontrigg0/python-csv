@@ -140,7 +140,7 @@ if __name__ == "__main__":
         else:
             #no group_by selected -> apply lambdas to the entire df
             df_out = pd.DataFrame()
-            for c in cols:
+            for c in agg_cols:
                 for agg_fn in agg_fn_list:
                     agg_str = agg_fn.__name__.rsplit("_",1)[0]
                     df_out.loc["0",c+"_"+agg_str] = df.loc[:,[c]].apply(agg_fn).values[0]
