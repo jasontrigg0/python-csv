@@ -2,12 +2,12 @@ from distutils.core import setup
 setup(
     name = 'python-csv',
     packages = ['pcsv'],
-    version = "0.0.11",
+    version = "0.0.12",
     description = 'Python tools for manipulating csv files',
     author = "Jason Trigg",
     author_email = "jasontrigg0@gmail.com",
     url = "https://github.com/jasontrigg0/python-csv",
-    download_url = 'https://github.com/jasontrigg0/python-csv/tarball/0.0.11',
+    download_url = 'https://github.com/jasontrigg0/python-csv/tarball/0.0.12',
     scripts=[
         "pcsv/pcsv",
         "pcsv/pagg",
