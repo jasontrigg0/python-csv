@@ -13,5 +13,5 @@ def readCL():
 if __name__ == "__main__":
     f_in = readCL()
     inlines = [line for line in csv.reader(f_in)]
-    outlines = zip_longest(*inlines)
+    outlines = itertools.zip_longest(*inlines)
     csv.writer(sys.stdout).writerows(outlines)

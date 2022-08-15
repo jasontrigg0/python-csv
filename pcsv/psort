@@ -21,7 +21,7 @@ def readCL():
     if args.lam:
         for i,fn_string in enumerate(args.lam):
             fn_string = "def lam{i}(x): {fn_string}".format(**vars())
-            exec(pcsv.pindent.pindent(fn_string))
+            exec(pcsv.pindent(fn_string))
         args.lam = vars()["lam0"]
 
     args.sort_list = args.sort_list.split(",")

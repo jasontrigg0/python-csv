@@ -31,7 +31,7 @@ def readCL():
 
     for i,fn_string in enumerate(args.lam):
         fn_string = "def lam{i}(x): {fn_string}".format(**vars())
-        exec(pcsv.pindent.pindent(fn_string))
+        exec(pcsv.pindent(fn_string))
 
     lam = []
     for i,_ in enumerate(args.lam):
@@ -63,6 +63,8 @@ def pctile_fn(array, pctile):
     return numpy.percentile([float(x) for x in array], pctile)
 def cnt_fn(array):
     return len(array)
+def group_concat_fn(array):
+    return str(array.tolist())
 def val0_fn(array):
     if len(array)>0:
         return list(array)[0]
@@ -84,6 +86,7 @@ def aggstr_to_fn(agg_str):
               "median":median_fn,
               "std":std_fn,
               "cnt":cnt_fn,
+              "group_concat":group_concat_fn,
               "val0":val0_fn,
               "val1":val1_fn}
 
