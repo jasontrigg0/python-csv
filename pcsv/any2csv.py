@@ -8,7 +8,7 @@ from . import plook
 import six
 import json
 import ast
-import demjson
+import demjson3
 ###
 def any2csv(txt, xls_sheet=None, xls_sheet_names=None, path=[], summary=False, to_stdout=False):
     try:
@@ -18,7 +18,7 @@ def any2csv(txt, xls_sheet=None, xls_sheet_names=None, path=[], summary=False, t
 
     try:
         json2csv(txt, path, summary, to_stdout)
-    except (SyntaxError, demjson.JSONDecodeError):
+    except (SyntaxError, demjson3.JSONDecodeError):
         pass
 
     try:
@@ -204,7 +204,7 @@ def parse_json(txt):
         pass
 
     try:
-        dict_list_obj = demjson.decode(txt)
+        dict_list_obj = demjson3.decode(txt)
         return dict_list_obj
     except:
         raise
