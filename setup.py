@@ -1,4 +1,4 @@
-from distutils.core import setup
+from setuptools import setup
 setup(
     name = 'python-csv',
     packages = ['pcsv'],
@@ -30,7 +30,7 @@ setup(
         "matplotlib",
         "xlrd",
         "xmltodict",
-        "demjson",
+        "demjson3",
         "leven",
         "jtutils"
     ],
