@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import sys
 import collections
-from leven import levenshtein
+import Levenstein
 
 import jtutils
 
@@ -130,7 +130,7 @@ def post_process_clusters(clusters, similarity_fn, force_matches):
 def simple_similarity_fn(str1, str2):
     #1 for identical strings
     #0 for completely different strings
-    edit_distance = levenshtein(str1.lower(), str2.lower())
+    edit_distance = Levenstein.distance(str1.lower(), str2.lower())
     similarity = 1 - (edit_distance / max(float(len(str1)), float(len(str2))))
     return max(similarity,0)
 
